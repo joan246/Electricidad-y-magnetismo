@@ -80,6 +80,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:20px;border-radius:3px;bac
 .srcrow .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .srcrow .nm{font-family:var(--mono);font-size:12.5px;font-weight:700}
 .srcrow .vv{margin-left:auto;font-family:var(--mono);color:var(--amber);font-size:13px}
+.srcrow .vv input[type=number]{width:74px;padding:3px 5px;color:var(--amber);text-align:right}
+.srcrow .fino{display:flex;align-items:center;gap:6px}
+.srcrow .fino button{flex:none;width:26px;padding:3px 0;font-family:var(--mono);font-size:13px}
 table.log{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono)}
 table.log th{text-align:left;color:var(--ink-faint);font-weight:600;font-size:9.5px;letter-spacing:.08em;
   text-transform:uppercase;border-bottom:1px solid var(--edge-hi);padding:4px 3px}
@@ -154,6 +157,10 @@ table.cmp tr.g td{color:var(--cyan);font-weight:700;padding-top:10px;border-bott
 table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
 .caja{background:var(--panel-2);border:1px solid var(--edge);border-radius:6px;padding:10px 12px}
 .caja h3{margin:0 0 8px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+/* ===== AMPLIACIÓN · barrido de tensión (incremento 9) ===== */
+#barGrafica svg{display:block;width:100%;height:auto;border:1px solid #2a323b;border-radius:6px;margin-top:8px}
+.barTabla{max-height:320px;overflow:auto}
+.barTabla table.cmp th,.barTabla table.cmp td.n{text-align:right}
 </style>
 </head>
 <body>
@@ -386,6 +393,27 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
       <div class="caja"><h3>Medidas automáticas</h3><div id="oscMedidas"></div></div>
       <div class="caja"><h3>Cursores</h3><div id="oscCursores"></div></div>
     </div>
+  </div>
+</details>
+
+<!-- ===== AMPLIACIÓN · barrido de tensión con la fuente variable (incremento 9) ===== -->
+<details class="tcard" id="cardBarrido" open>
+  <summary>Fuente variable · barrido de tensión <span class="tag2">incremento 9</span></summary>
+  <div class="tbody">
+    <p class="hint" style="margin-top:0">
+      Varía la tensión de una fuente del banco de V<sub>inicial</sub> a V<sub>final</sub> en N puntos y, en cada uno, resuelve el montaje en DC y lee
+      la <b>corriente que entrega la fuente</b>, el voltímetro y el amperímetro del banco (si están conectados) y los voltímetros y amperímetros agregados.
+      Cada magnitud se ajusta a una recta y = m·V + b por mínimos cuadrados. En un circuito lineal R² = 1. Si y es la corriente de la fuente,
+      <b>1/m = ΔV/ΔI</b> es la resistencia equivalente que ella ve (ley de Ohm); si es una tensión, <b>m</b> es la ganancia (la razón de un divisor).
+      Una ordenada b ≠ 0 es el aporte de las <b>otras fuentes encendidas</b> (superposición): con P5, por ejemplo, la corriente de la fuente 1 cruza
+      cero en la tensión en que la fuente 2 la equilibra.
+      La fuente se enciende solo durante el barrido y luego vuelve a su tensión y estado. Las lecturas son las del motor, sin ruido.
+    </p>
+    <div class="ctrls" id="barCtrls"></div>
+    <div class="estado" id="barEstado">Arma un circuito (o carga un ejemplo) y pulsa «Ejecutar barrido».</div>
+    <div id="barGrafica"></div>
+    <div class="caja" style="margin-top:12px"><h3>Ajuste lineal de cada magnitud</h3><div id="barAjustes"><p class="empty">Sin barrido.</p></div></div>
+    <div class="caja" style="margin-top:12px"><h3>Puntos del barrido</h3><div id="barTabla" class="barTabla"><p class="empty">Sin barrido.</p></div></div>
   </div>
 </details>
 
@@ -3467,6 +3495,151 @@ const ValidacionProtocolo = (function(){
 })();
 </script>
 
+<script id="barrido-logica">
+"use strict";
+/* ====================================================================
+   AMPLIACIÓN · (g) BARRIDO DE TENSIÓN CON LA FUENTE VARIABLE (incremento 9)
+   --------------------------------------------------------------------
+   Código PURO (sin DOM). Una fuente DC del protoboard recorre N valores
+   igualmente espaciados de V_0 a V_1; en cada uno se resuelve el montaje
+   en DC (medir(V), que entrega la interfaz) y se guardan las magnitudes
+   leídas. Luego cada magnitud se ajusta a una recta y = m·V + b por
+   mínimos cuadrados (sumas centradas, numéricamente estables):
+       m = Σ(V−V̄)(y−ȳ) / Σ(V−V̄)²,   b = ȳ − m·V̄,
+       R² = [Σ(V−V̄)(y−ȳ)]² / [Σ(V−V̄)² · Σ(y−ȳ)²]
+   Lectura física (circuito lineal: R, y C y L en DC):
+     · toda tensión y corriente es una función AFÍN de cada fuente
+       (superposición) ⇒ R² = 1 salvo redondeo;
+     · b es el aporte de las OTRAS fuentes encendidas (b = 0 si es la única);
+     · si y es una corriente, 1/m = ΔV/ΔI es la resistencia equivalente que
+       "ve" la variación (ley de Ohm en el montaje);
+     · si y es una tensión, m = ΔV_y/ΔV es la ganancia (p. ej. la razón de
+       un divisor de tensión).
+   ==================================================================== */
+const BarridoTension = (function(){
+  const V_MIN = 0, V_MAX = 30;            // V · el mismo rango del deslizador de las fuentes del banco
+  const PUNTOS_MIN = 2, PUNTOS_MAX = 201; // puntos del barrido, contando los dos extremos
+  const DEFECTO = Object.freeze({fuente:0, v0:0, v1:12, n:13});   // 0 → 12 V de 1 V en 1 V
+  const DECIMALES_V = 9;                  // redondeo de los valores del barrido (evita 0,30000000000000004)
+  const TOL_CONSTANTE = 1e-9;             // variación rms relativa bajo la cual la magnitud se toma como constante
+  const PREFIJOS = [['k',1e3],['',1],['m',1e-3],['µ',1e-6],['n',1e-9],['p',1e-12]];
+  const COLORES = Object.freeze({fondo:'#0b0f12', reticula:'#1f2933', eje:'#6c7a8a', texto:'#9aa7b6',
+                                 puntos:'#4fd1e0', ajuste:'#f0a12e'});
+
+  const fmt=(x,u,c)=>ModeloMontaje.formatoValor(x,u,c||4);
+
+  // null si los parámetros son aceptables; si no, el mensaje para el usuario
+  function validar(p){
+    if(!p) return 'Faltan los parámetros del barrido.';
+    if(![p.v0,p.v1].every(Number.isFinite)) return 'La tensión inicial y la final deben ser números.';
+    if(p.v0<V_MIN || p.v0>V_MAX || p.v1<V_MIN || p.v1>V_MAX) return `Use tensiones entre ${V_MIN} y ${V_MAX} V (el rango de las fuentes del banco).`;
+    if(p.v0===p.v1) return 'La tensión inicial y la final deben ser distintas.';
+    if(!Number.isInteger(p.n) || p.n<PUNTOS_MIN || p.n>PUNTOS_MAX) return `El número de puntos debe ser un entero entre ${PUNTOS_MIN} y ${PUNTOS_MAX}.`;
+    return null;
+  }
+  // N valores igualmente espaciados de v0 a v1 (los extremos quedan exactos)
+  function valores(v0, v1, n){
+    return Array.from({length:n}, (_,k)=>+(v0+(v1-v0)*k/(n-1)).toFixed(DECIMALES_V));
+  }
+  // Recta de mínimos cuadrados y = m·x + b. constante: y no varía con x (m = 0, R² sin definir)
+  function ajustar(xs, ys){
+    const n=xs.length, mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+    let sxx=0, sxy=0, syy=0;
+    for(let k=0;k<n;k++){ const dx=xs[k]-mx, dy=ys[k]-my; sxx+=dx*dx; sxy+=dx*dy; syy+=dy*dy; }
+    const escala=Math.max(...ys.map(Math.abs));
+    const constante = Math.sqrt(syy/n) <= TOL_CONSTANTE*escala || syy===0;
+    const m = constante ? 0 : sxy/sxx, b = my-m*mx;
+    let residuoMax=0;
+    for(let k=0;k<n;k++) residuoMax=Math.max(residuoMax, Math.abs(ys[k]-(m*xs[k]+b)));
+    return {pendiente:m, ordenada:b, r2:(constante ? null : Math.min(1, sxy*sxy/(sxx*syy))), residuoMax, constante};
+  }
+  // Ejecuta el barrido. magnitudes = [{clave, nombre, unidad:'V'|'A'}];
+  // medir(V) → {ok:true, y:{clave:valor}} o {ok:false, error}
+  function ejecutar(p, magnitudes, medir){
+    const error=validar(p);
+    if(error) return {ok:false, error, filas:[]};
+    if(!magnitudes || !magnitudes.length) return {ok:false, error:'No hay magnitudes que medir.', filas:[]};
+    const xs=valores(p.v0, p.v1, p.n), filas=[];
+    for(const V of xs){
+      const r=medir(V);
+      if(!r || !r.ok) return {ok:false, error:`Con la fuente en ${fmt(V,'V')} el circuito no tiene solución${r && r.error ? ': '+r.error : '.'}`, filas};
+      filas.push({V, y:Object.fromEntries(magnitudes.map(m=>[m.clave, r.y[m.clave]]))});
+    }
+    const ajustes={};
+    magnitudes.forEach(m=>{ ajustes[m.clave]=ajustar(xs, filas.map(f=>f.y[m.clave])); });
+    return {ok:true, p:Object.assign({}, p), magnitudes:magnitudes.map(m=>Object.assign({}, m)), filas, ajustes};
+  }
+  // Lo que dice la pendiente. Corriente de la propia fuente (magnitud.propia): R vista = ΔV/ΔI.
+  // Corriente de otra rama: transresistencia ΔV_F/ΔI (negativa si esa corriente baja al subir
+  // la fuente). Tensión: ganancia ΔV_y/ΔV_F.
+  function interpretar(magnitud, a){
+    if(a.constante) return {texto:'no depende de esta fuente (constante)', valor:null};
+    if(magnitud.unidad==='A'){
+      const R=fmt(1/a.pendiente,'Ω',5);
+      return {texto: magnitud.propia ? `R vista por la fuente = ΔV/ΔI = ${R}`
+                                     : `ΔV<sub>F</sub>/ΔI = ${R}`+(a.pendiente<0 ? ' (la corriente baja al subir la fuente)' : ''),
+              valor:1/a.pendiente, unidad:'Ω'};
+    }
+    return {texto:`ganancia ΔV/ΔV<sub>F</sub> = ${String(+a.pendiente.toPrecision(5)).replace('.',',')}`, valor:a.pendiente, unidad:''};
+  }
+  // Puntos del barrido en CSV (mismo formato que los demás CSV del simulador)
+  function csv(res){
+    const filas=[[`V fuente ${res.p.fuente+1} (V)`].concat(res.magnitudes.map(m=>`${m.nombre} (${m.unidad})`))];
+    res.filas.forEach(f=>filas.push([f.V.toPrecision(10)].concat(res.magnitudes.map(m=>Number.isFinite(f.y[m.clave]) ? f.y[m.clave].toPrecision(10) : ''))));
+    return filas.map(f=>f.map(c=>`"${c}"`).join(',')).join('\n');
+  }
+
+  /* ---------- gráfica (SVG) ---------- */
+  // Paso "redondo" 1, 2 o 5 × 10^k para unas n divisiones
+  function pasoRedondo(rango, n){
+    const bruto=rango/n, p=Math.pow(10, Math.floor(Math.log10(bruto))), f=bruto/p;
+    return (f<=1 ? 1 : f<=2 ? 2 : f<=5 ? 5 : 10)*p;
+  }
+  function marcas(a, b, n){
+    if(!(b>a)){ const d=Math.abs(a)*0.1 || 1; a-=d; b+=d; }
+    const paso=pasoRedondo(b-a, n), ini=Math.floor(a/paso+1e-9)*paso, fin=Math.ceil(b/paso-1e-9)*paso, lista=[];
+    for(let v=ini; v<=fin+paso*1e-6; v+=paso) lista.push(Math.abs(v)<paso*1e-9 ? 0 : v);
+    return {ini, fin, lista};
+  }
+  // Prefijo común para un eje (el número de cada marca queda entre 1 y 1000)
+  function prefijoEje(maxAbs){ return PREFIJOS.find(([,f])=>maxAbs>=f*0.9999995) || PREFIJOS[PREFIJOS.length-1]; }
+  const numero=(x)=>String(+x.toPrecision(4)).replace('.',',');
+
+  function graficaSVG(res, clave, opciones){
+    const o=Object.assign({ancho:900, alto:340}, opciones||{});
+    const mag=res.magnitudes.find(m=>m.clave===clave) || res.magnitudes[0], a=res.ajustes[mag.clave];
+    const xs=res.filas.map(f=>f.V), ys=res.filas.map(f=>f.y[mag.clave]);
+    const x0=Math.min(...xs), x1=Math.max(...xs), recta=x=>a.pendiente*x+a.ordenada;
+    let ymin=Math.min(...ys, recta(x0), recta(x1)), ymax=Math.max(...ys, recta(x0), recta(x1));
+    if(ymin>0) ymin=0; if(ymax<0) ymax=0;            // el eje y incluye el cero: se ve la proporcionalidad
+    const MX=marcas(x0, x1, 10), MY=marcas(ymin, ymax, 6);
+    const [pf, f]=prefijoEje(Math.max(Math.abs(MY.ini), Math.abs(MY.fin)));
+    const izq=72, der=18, arr=30, abj=46, pw=o.ancho-izq-der, ph=o.alto-arr-abj;
+    const X=v=>izq+(v-MX.ini)/(MX.fin-MX.ini)*pw, Y=v=>arr+ph-(v-MY.ini)/(MY.fin-MY.ini)*ph;
+    const C=COLORES, txt=(x,y,t,anc,col)=>`<text x="${x}" y="${y}" fill="${col||C.texto}" font-family="ui-monospace,monospace" font-size="11" text-anchor="${anc||'middle'}">${t}</text>`;
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.ancho} ${o.alto}" width="100%" role="img" aria-label="${mag.nombre} frente a la tensión de la fuente ${res.p.fuente+1}">`+
+      `<rect width="${o.ancho}" height="${o.alto}" fill="${C.fondo}"/>`;
+    MX.lista.forEach(v=>{ s+=`<line x1="${X(v)}" y1="${arr}" x2="${X(v)}" y2="${arr+ph}" stroke="${C.reticula}"/>`+txt(X(v), arr+ph+16, numero(v)); });
+    MY.lista.forEach(v=>{ s+=`<line x1="${izq}" y1="${Y(v)}" x2="${izq+pw}" y2="${Y(v)}" stroke="${C.reticula}"/>`+txt(izq-7, Y(v)+4, numero(v/f), 'end'); });
+    if(MY.ini<0 && MY.fin>0) s+=`<line x1="${izq}" y1="${Y(0)}" x2="${izq+pw}" y2="${Y(0)}" stroke="${C.eje}"/>`;
+    s+=`<rect x="${izq}" y="${arr}" width="${pw}" height="${ph}" fill="none" stroke="${C.eje}"/>`;
+    s+=txt(izq+pw/2, o.alto-8, `V de la fuente ${res.p.fuente+1} (V)`);
+    s+=`<text x="16" y="${arr+ph/2}" fill="${C.texto}" font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" transform="rotate(-90 16 ${arr+ph/2})">${mag.nombre} (${pf}${mag.unidad})</text>`;
+    // recta ajustada (punteada) y puntos del barrido
+    s+=`<line x1="${X(x0)}" y1="${Y(recta(x0))}" x2="${X(x1)}" y2="${Y(recta(x1))}" stroke="${C.ajuste}" stroke-width="2" stroke-dasharray="7 5"/>`;
+    xs.forEach((x,k)=>{ s+=`<circle cx="${X(x)}" cy="${Y(ys[k])}" r="3.6" fill="${C.puntos}"/>`; });
+    const I=interpretar(mag, a);
+    s+=`<circle cx="${izq+10}" cy="${arr-13}" r="3.6" fill="${C.puntos}"/>`+txt(izq+19, arr-9, 'motor', 'start')+
+       `<line x1="${izq+76}" y1="${arr-13}" x2="${izq+100}" y2="${arr-13}" stroke="${C.ajuste}" stroke-width="2" stroke-dasharray="7 5"/>`+
+       txt(izq+107, arr-9, a.constante ? 'constante' : `ajuste y = m·V + b · R² = ${a.r2.toFixed(6).replace('.',',')} · ${I.texto.replace(/<\/?sub>/g,'')}`, 'start');
+    return s+'</svg>';
+  }
+
+  return Object.freeze({ V_MIN, V_MAX, PUNTOS_MIN, PUNTOS_MAX, DEFECTO, TOL_CONSTANTE,
+    validar, valores, ajustar, ejecutar, interpretar, csv, graficaSVG, marcas, pasoRedondo });
+})();
+</script>
+
 <script id="montaje-ui">
 "use strict";
 /* ====================================================================
@@ -3862,7 +4035,7 @@ function drawSources(){
       <rect x="${x+4}" y="${y+4}" width="${SRCW-8}" height="${SRCH-8}" rx="7" fill="none" stroke="#ffffff12"/></g>`;
     s+=`<text class="title" x="${x+14}" y="${y+22}">FUENTE ${i+1}</text>`;
     s+=`<rect x="${x+14}" y="${y+32}" width="126" height="40" rx="4" fill="url(#lcdG)" stroke="#0e1410"/>`;
-    s+=`<text class="lcdtxt" x="${x+118}" y="${y+61}" font-size="22" text-anchor="end">${sc.on?sc.V.toFixed(1).replace('.',','):'- - -'}</text>`;
+    s+=`<text class="lcdtxt" x="${x+118}" y="${y+61}" font-size="22" text-anchor="end">${sc.on?textoV(sc.V):'- - -'}</text>`;   // [incr. 9] centésimas si se escribieron
     s+=`<text class="lcdtxt" x="${x+123}" y="${y+61}" font-size="13" text-anchor="start">V</text>`;
     s+=`<circle cx="${x+SRCW-34}" cy="${y+30}" r="7" fill="${sc.on?'#3fbf6f':'#3a4249'}" stroke="#0c1116"/>`;
     s+=`<text class="sub" x="${x+SRCW-34}" y="${y+50}" text-anchor="middle">${sc.on?'ON':'OFF'}</text>`;
@@ -4110,7 +4283,7 @@ function renderAnalysis(res){
   st.srcs.forEach(s=>{
     if(!s.on){ h+=`<div><span class="l">Fuente ${s.i+1}:</span> apagada</div>`; return; }
     const I=res.srcI[s.i]||0;
-    h+=`<div><span class="l">Fuente ${s.i+1}:</span> ${f(s.V,'V',1)} · I = ${f(I*1000,'mA',3)}`
+    h+=`<div><span class="l">Fuente ${s.i+1}:</span> ${f(s.V,'V',2)} · I = ${f(I*1000,'mA',3)}`
       +(Math.abs(I)>IMAX?' <span class="bad">▲ cortocircuito</span>':'')+`</div>`;
   });
   h+='<hr>';
@@ -4292,22 +4465,55 @@ function buildSwatches(){
     st.color=el.dataset.c; buildSwatches();
   });
 }
+/* [incr. 9] Fuente variable. Antes el deslizador reconstruía todo el panel en cada
+   evento "input": el control que se estaba arrastrando desaparecía del DOM y el arrastre
+   se cortaba después del primer paso (solo se podía mover 0,1–0,4 V por arrastre). Ahora
+   el deslizador, el campo numérico y los botones ± solo actualizan el estado y los otros
+   controles de la misma fuente; el panel se reconstruye únicamente al encender/apagar. */
+const V_FUENTE_MIN = 0, V_FUENTE_MAX = 30;   // V · rango de las fuentes del banco
+const PASO_DESLIZADOR_V = 0.1;               // V · resolución del deslizador y de los botones ±
+const RESOLUCION_V = 0.01;                   // V · resolución del campo numérico
+const redondearV = v => Math.round(v/RESOLUCION_V)/Math.round(1/RESOLUCION_V);   // 7,35 y no 7,3500000000000005
+const textoV = v => (Math.abs(v*10-Math.round(v*10))<1e-9 ? v.toFixed(1) : v.toFixed(2)).replace('.',',');
+// Fija la tensión de la fuente i (recortada al rango) y sincroniza sus controles, salvo `origen`
+function fijarTensionFuente(i, v, origen){
+  const s=st.srcs[i]; if(!s || !Number.isFinite(v)) return;
+  s.V=redondearV(Math.min(V_FUENTE_MAX, Math.max(V_FUENTE_MIN, v)));
+  const panel=L('srcPanel');
+  const num=panel.querySelector(`[data-svn="${i}"]`), rango=panel.querySelector(`[data-sv="${i}"]`);
+  if(num && num!==origen) num.value=+s.V.toFixed(2);
+  if(rango && rango!==origen) rango.value=s.V;
+  redraw();
+}
 function buildSrcPanel(){
   L('srcPanel').innerHTML=st.srcs.map(s=>`
     <div class="srcrow">
       <div class="top"><span class="nm">Fuente ${s.i+1}</span>
         <button class="mini ${s.on?'on':''}" data-son="${s.i}">${s.on?'Encendida':'Apagada'}</button>
-        <span class="vv">${s.V.toFixed(1).replace('.',',')} V</span></div>
-      <input type="range" min="0" max="30" step="0.1" value="${s.V}" data-sv="${s.i}">
+        <span class="vv"><input type="number" min="${V_FUENTE_MIN}" max="${V_FUENTE_MAX}" step="${RESOLUCION_V}" value="${+s.V.toFixed(2)}"
+          data-svn="${s.i}" title="tensión exacta (${V_FUENTE_MIN}–${V_FUENTE_MAX} V)" aria-label="Tensión de la fuente ${s.i+1} en voltios"> V</span></div>
+      <div class="fino">
+        <button class="mini" data-spaso="${s.i}" data-d="-1" title="−${textoV(PASO_DESLIZADOR_V)} V" aria-label="Bajar la fuente ${s.i+1}">−</button>
+        <input type="range" min="${V_FUENTE_MIN}" max="${V_FUENTE_MAX}" step="${PASO_DESLIZADOR_V}" value="${s.V}" data-sv="${s.i}" aria-label="Deslizador de la fuente ${s.i+1}">
+        <button class="mini" data-spaso="${s.i}" data-d="1" title="+${textoV(PASO_DESLIZADOR_V)} V" aria-label="Subir la fuente ${s.i+1}">+</button>
+      </div>
     </div>`).join('') +
     `<div class="btnrow"><button class="mini ${st.ideal?'on':''}" id="tgIdeal">Fuentes ideales (sin r interna)</button></div>
-     <p class="hint">Con resistencia interna de 0,5 Ω las lecturas se apartan un poco de la teoría, como en un montaje real.</p>`;
+     <p class="hint">Con resistencia interna de 0,5 Ω las lecturas se apartan un poco de la teoría, como en un montaje real.
+       La tensión se ajusta con el deslizador (o las flechas del teclado), con − y + de ${textoV(PASO_DESLIZADOR_V)} V o escribiendo el valor exacto.</p>`;
   L('tgIdeal').onclick=()=>{ st.ideal=!st.ideal; buildSrcPanel(); redraw(); };
   L('srcPanel').querySelectorAll('[data-son]').forEach(b=>b.onclick=()=>{
     const s=st.srcs[+b.dataset.son]; s.on=!s.on; buildSrcPanel(); redraw();
   });
-  L('srcPanel').querySelectorAll('[data-sv]').forEach(r=>r.oninput=()=>{
-    st.srcs[+r.dataset.sv].V=parseFloat(r.value); buildSrcPanel(); redraw();
+  // deslizador: NO reconstruye el panel (se cortaría el arrastre)
+  L('srcPanel').querySelectorAll('[data-sv]').forEach(r=>r.oninput=()=>fijarTensionFuente(+r.dataset.sv, parseFloat(r.value), r));
+  // campo numérico: aplica mientras se escribe si el valor está en rango; al confirmar, recorta y corrige el campo
+  L('srcPanel').querySelectorAll('[data-svn]').forEach(n=>{
+    n.oninput=()=>{ const v=parseFloat(n.value); if(Number.isFinite(v) && v>=V_FUENTE_MIN && v<=V_FUENTE_MAX) fijarTensionFuente(+n.dataset.svn, v, n); };
+    n.onchange=()=>{ const i=+n.dataset.svn, v=parseFloat(n.value); fijarTensionFuente(i, Number.isFinite(v) ? v : st.srcs[i].V); n.value=+st.srcs[i].V.toFixed(2); };
+  });
+  L('srcPanel').querySelectorAll('[data-spaso]').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.spaso; fijarTensionFuente(i, st.srcs[i].V + (+b.dataset.d)*PASO_DESLIZADOR_V);
   });
 }
 function buildRPanel(){
@@ -4439,7 +4645,9 @@ function bind(){
     Object.keys(st.res).filter(k=>ModeloMontaje.tipoDe(st.res[k])==='R').forEach((k,i)=>{ st.res[k].bands=(def[i]||def[0]).slice(); st.res[k].dev=rnd(); });
     buildRPanel(); redraw();
   };
-  document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>preset(b.dataset.preset));
+  // [incr. 9] preset() cambia las fuentes (F1 = 12 V encendida, F2 y F3 apagadas): el panel
+  // debe reflejarlo (antes seguía mostrando, p. ej., «Fuente 2: Encendida» con la fuente apagada)
+  document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{ preset(b.dataset.preset); buildSrcPanel(); });
   document.querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>addLog(b.dataset.log));
   L('clearLog').onclick=()=>{ st.log=[]; renderLog(); };
   L('expCsv').onclick=()=>{
@@ -4915,6 +5123,265 @@ const PanelValidacion = (function(){
   }
   L('valRun').onclick=ejecutar;
   return Object.freeze({ejecutar});
+})();
+</script>
+
+<script id="ui-barrido">
+"use strict";
+/* ====================================================================
+   AMPLIACIÓN · (h) FUENTE VARIABLE: BARRIDO DE TENSIÓN (incremento 9)
+   Interfaz del barrido. Usa las mismas funciones del simulador que las
+   lecturas en vivo (solveDC, connected, lecturaMedidor): el barrido mide
+   exactamente lo que mostrarían los instrumentos con la fuente en cada
+   valor. La lógica (valores, ajuste, CSV y gráfica) está en
+   BarridoTension, código puro. La fuente vuelve a su tensión y estado
+   al terminar, aunque el barrido falle.
+   ==================================================================== */
+const PanelBarrido = (function(){
+  const B=BarridoTension, M=ModeloMontaje;
+  const cfg=Object.assign({}, B.DEFECTO, {eje:null});
+  // S · si la fuente ve más de 100 MΩ (más que cualquier medidor del banco, de 10 MΩ) está al aire:
+  // lo que entrega es solo la fuga de 1 nS por nodo del modelo (≈ 1,5 GΩ con la fuente sin conectar)
+  const G_ABIERTO = 1e-8;
+  let ultimo=null;
+  const fmt=(x,u,c)=>M.formatoValor(x,u,c||4);
+  const estado=html=>{ L('barEstado').innerHTML=html; };
+
+  /* ---------- medición sobre el montaje ---------- */
+  // Magnitudes que se pueden leer en el montaje actual, en el orden de la tabla
+  function magnitudes(i){
+    const lista=[{clave:'IF', nombre:`I entregada por F${i+1}`, unidad:'A', registro:`F${i+1}`, propia:true}];
+    if(connected('V')) lista.push({clave:'MV', nombre:'Voltímetro del banco', unidad:'V', registro:'Voltímetro'});
+    if(connected('A')) lista.push({clave:'MA', nombre:'Amperímetro del banco', unidad:'A', registro:'Amperímetro'});
+    Object.keys(st.res).forEach(k=>{
+      const c=st.res[k];
+      if(c.a && c.b && M.esMedidor(c) && !M.esSonda(c)) lista.push({clave:k, nombre:k, unidad:M.TIPOS[M.tipoDe(c)].medidor, registro:k});
+    });
+    return lista;
+  }
+  // medir(V) para BarridoTension: lecturas con la fuente i en V voltios (sin el ruido de los LCD del banco)
+  function medirCon(i, mags){
+    return V=>{
+      st.srcs[i].V=V;
+      const r=solveDC();
+      if(!r.ok) return {ok:false, error:(r.errores||[])[0]||''};
+      const y={};
+      mags.forEach(m=>{
+        if(m.clave==='IF') y.IF=-(r.srcI[i]||0);                  // el motor da i < 0 en una fuente que entrega
+        else if(m.clave==='MV') y.MV=r.V('MVr')-r.V('MVb');
+        else if(m.clave==='MA') y.MA=(r.V('MAr')-r.V('MAb'))/BURDEN;
+        else y[m.clave]=M.lecturaMedidor(st.res[m.clave], r.I(m.clave));
+      });
+      return {ok:true, y};
+    };
+  }
+  // Barrido sobre el montaje actual; la fuente vuelve a su tensión y estado pase lo que pase
+  function barrer(p){
+    const s=st.srcs[p.fuente];
+    if(!s) return {ok:false, error:'La fuente elegida no existe.', filas:[]};
+    const antes={V:s.V, on:s.on}, mags=magnitudes(p.fuente);
+    try{ s.on=true; return B.ejecutar(p, mags, medirCon(p.fuente, mags)); }
+    finally{ s.V=antes.V; s.on=antes.on; }
+  }
+
+  /* ---------- controles ---------- */
+  function construirControles(){
+    const num=(id, valor, min, max, paso, ancho)=>`<input type="number" id="${id}" value="${valor}" min="${min}" max="${max}" step="${paso}" style="width:${ancho}px">`;
+    L('barCtrls').innerHTML=
+      `<div class="grp"><label for="barF">Fuente variable</label><select id="barF">${st.srcs.map(s=>`<option value="${s.i}"${s.i===cfg.fuente?' selected':''}>Fuente ${s.i+1}</option>`).join('')}</select></div>`+
+      `<div class="grp"><label for="barV0">V inicial</label><div class="vf">${num('barV0', cfg.v0, B.V_MIN, B.V_MAX, 'any', 74)}<span class="u">V</span></div></div>`+
+      `<div class="grp"><label for="barV1">V final</label><div class="vf">${num('barV1', cfg.v1, B.V_MIN, B.V_MAX, 'any', 74)}<span class="u">V</span></div></div>`+
+      `<div class="grp"><label for="barN">Puntos</label><div class="vf">${num('barN', cfg.n, B.PUNTOS_MIN, B.PUNTOS_MAX, 1, 64)}<span class="u" id="barPaso"></span></div></div>`+
+      `<div class="grp"><label for="barEje">Eje y de la gráfica</label><select id="barEje"><option value="">—</option></select></div>`+
+      `<div class="grp"><label>&nbsp;</label><div class="btnrow">
+         <button class="mini on" id="barRun">Ejecutar barrido</button>
+         <button class="mini" id="barCsv">CSV</button>
+         <button class="mini" id="barSvg">Capturar SVG</button>
+         <button class="mini" id="barLog">Anotar ajustes</button></div></div>`;
+    ['barV0','barV1','barN'].forEach(id=>L(id).addEventListener('input', ()=>{ leer(); mostrarPaso(); }));
+    L('barF').onchange=leer;
+    L('barEje').onchange=()=>{ cfg.eje=L('barEje').value; dibujar(); };
+    L('barRun').onclick=ejecutar;
+    L('barCsv').onclick=exportarCSV;
+    L('barSvg').onclick=capturarSVG;
+    L('barLog').onclick=anotar;
+    mostrarPaso(); llenarEje();
+  }
+  function leer(){
+    cfg.fuente=+L('barF').value; cfg.v0=parseFloat(L('barV0').value); cfg.v1=parseFloat(L('barV1').value); cfg.n=Number(L('barN').value);
+  }
+  function mostrarPaso(){
+    const ok=!B.validar(cfg);
+    L('barPaso').textContent = ok ? `ΔV = ${fmt(Math.abs(cfg.v1-cfg.v0)/(cfg.n-1),'V')}` : '';
+  }
+  function llenarEje(){
+    const sel=L('barEje');
+    if(!ultimo){ sel.innerHTML='<option value="">—</option>'; return; }
+    sel.innerHTML=ultimo.magnitudes.map(m=>`<option value="${m.clave}"${m.clave===cfg.eje?' selected':''}>${m.nombre} (${m.unidad})</option>`).join('');
+  }
+  // Eje y por defecto: un amperímetro (curva I–V), si no la corriente de la fuente
+  function ejePorDefecto(res){
+    const am=res.magnitudes.find(m=>m.unidad==='A' && m.clave!=='IF' && !res.ajustes[m.clave].constante);
+    return (am || res.magnitudes[0]).clave;
+  }
+
+  /* ---------- ejecutar y mostrar ---------- */
+  function ejecutar(){
+    leer();
+    const error=B.validar(cfg);
+    if(error) return estado(`<span class="bad">✖ ${error}</span>`);
+    const s=st.srcs[cfg.fuente], estabaApagada=!s.on;
+    const t0=performance.now();
+    const res=barrer(cfg);
+    const ms=performance.now()-t0;
+    redraw();
+    if(!res.ok){ ultimo=null; llenarEje(); L('barGrafica').innerHTML=''; L('barAjustes').innerHTML=L('barTabla').innerHTML='<p class="empty">Sin barrido.</p>';
+      return estado(`<span class="bad">✖ ${res.error}</span>`); }
+    ultimo=res;
+    if(!res.magnitudes.some(m=>m.clave===cfg.eje)) cfg.eje=ejePorDefecto(res);
+    llenarEje(); dibujar(); tablas();
+    const avisos=[];
+    if(estabaApagada) avisos.push(`La fuente ${cfg.fuente+1} estaba apagada: se encendió solo durante el barrido.`);
+    const aIF=res.ajustes.IF;
+    if(aIF.constante || Math.abs(aIF.pendiente)<G_ABIERTO)
+      avisos.push(`La fuente ${cfg.fuente+1} ve un circuito abierto (R vista ${aIF.constante ? '∞' : '≈ '+fmt(1/Math.abs(aIF.pendiente),'Ω',2)}: `+
+        `solo la fuga de 1 nS por nodo del modelo). Revisa que esté conectada al circuito.`);
+    const exceso=res.filas.find(f=>Math.abs(f.y.IF)>IMAX);
+    if(exceso) avisos.push(`Desde ${fmt(exceso.V,'V')} la fuente entrega más de ${fmt(IMAX,'A')}: ¿hay un cortocircuito?`);
+    const noLineal=res.magnitudes.filter(m=>{ const a=res.ajustes[m.clave]; return !a.constante && 1-a.r2>1e-9; });
+    if(noLineal.length) avisos.push(`Respuesta no lineal en ${noLineal.map(m=>m.nombre).join(', ')} (R² < 1).`);
+    estado(`Barrido de la fuente ${cfg.fuente+1}: ${res.filas.length} puntos de ${fmt(cfg.v0,'V')} a ${fmt(cfg.v1,'V')} · ${res.magnitudes.length} magnitud${res.magnitudes.length>1?'es':''} · ${ms.toFixed(0)} ms`+
+      avisos.map(a=>`<div class="warn">⚠ ${a}</div>`).join(''));
+  }
+  function dibujar(){
+    if(!ultimo) return;
+    L('barGrafica').innerHTML=B.graficaSVG(ultimo, cfg.eje);
+  }
+  function tablas(){
+    const r=ultimo;
+    L('barAjustes').innerHTML=`<table class="cmp"><thead><tr><th>Magnitud</th><th style="text-align:right">Pendiente m</th><th style="text-align:right">Ordenada b</th>`+
+      `<th style="text-align:right">R²</th><th>Lectura física</th></tr></thead><tbody>`+
+      r.magnitudes.map(m=>{
+        const a=r.ajustes[m.clave], I=B.interpretar(m, a);
+        const pend = a.constante ? '0' : (m.unidad==='A' ? fmt(a.pendiente,'S',5) : String(+a.pendiente.toPrecision(6)).replace('.',','));
+        return `<tr><td>${m.nombre}</td><td class="n">${pend}</td><td class="n">${fmt(a.ordenada, m.unidad, 5)}</td>`+
+          `<td class="n">${a.constante ? '—' : a.r2.toFixed(6).replace('.',',')}</td><td>${I.texto}</td></tr>`;
+      }).join('')+`</tbody></table>`+
+      `<p class="hint">En una corriente la pendiente está en siemens (A/V). Para la corriente de la propia fuente (o un amperímetro en serie con ella), `+
+      `1/m es la resistencia equivalente que ve la fuente; en otra rama, 1/m es una transresistencia ΔV<sub>F</sub>/ΔI. `+
+      `La ordenada b es la lectura con la fuente en 0 V: el aporte de las demás fuentes encendidas.</p>`;
+    L('barTabla').innerHTML=`<table class="cmp"><thead><tr><th>V<sub>F${r.p.fuente+1}</sub></th>${r.magnitudes.map(m=>`<th>${m.nombre}</th>`).join('')}</tr></thead><tbody>`+
+      r.filas.map(f=>`<tr><td class="n">${fmt(f.V,'V',5)}</td>${r.magnitudes.map(m=>`<td class="n">${fmt(f.y[m.clave], m.unidad, 5)}</td>`).join('')}</tr>`).join('')+
+      `</tbody></table>`;
+  }
+
+  /* ---------- exportar ---------- */
+  const nombreArchivo=ext=>`barrido_F${ultimo.p.fuente+1}_${ultimo.p.v0}-${ultimo.p.v1}V_${ultimo.p.n}puntos.${ext}`.replace(/\./g, (m, i, s)=>i===s.lastIndexOf('.') ? '.' : ',');
+  function exportarCSV(){
+    if(!ultimo) return estado('<span class="warn">Primero ejecuta el barrido.</span>');
+    download(nombreArchivo('csv'), B.csv(ultimo), 'text/csv;charset=utf-8');
+  }
+  function capturarSVG(){
+    if(!ultimo) return estado('<span class="warn">Primero ejecuta el barrido.</span>');
+    download(nombreArchivo('svg'), B.graficaSVG(ultimo, cfg.eje), 'image/svg+xml;charset=utf-8');
+  }
+  function anotar(){
+    if(!ultimo) return estado('<span class="warn">Primero ejecuta el barrido.</span>');
+    const hora=new Date().toLocaleTimeString('es-CO',{hour12:false}), p=ultimo.p;
+    ultimo.magnitudes.forEach(m=>{
+      const a=ultimo.ajustes[m.clave], I=B.interpretar(m, a);
+      st.log.push({t:hora, inst:m.registro, val:`barrido F${p.fuente+1} ${fmt(p.v0,'V')}–${fmt(p.v1,'V')}: ${I.texto.replace(/<\/?sub>/g,'')}`+(a.constante?'':` (R² ${a.r2.toFixed(6).replace('.',',')})`)});
+    });
+    renderLog();
+    msg(`${ultimo.magnitudes.length} ajuste${ultimo.magnitudes.length>1?'s':''} anotado${ultimo.magnitudes.length>1?'s':''} en el registro de medidas`);
+  }
+
+  /* ---------- pruebas (botón «Ejecutar pruebas del motor») ----------
+     1) la lógica pura con casos calculados a mano;
+     2) el divisor del base (R1 + R4, amperímetro en serie y voltímetro sobre R4) con las R
+        nominales: la pendiente frente a la teoría del montaje (r interna 0,5 Ω, 4 cables de
+        0,02 Ω en la malla, shunt 0,1 Ω y R4 ‖ (10 MΩ + 2 cables));
+     3) P5 (dos fuentes): pendiente y ordenada de AM1 y VM2 frente a la teoría de dos mallas
+        (superposición: la ordenada es lo que aporta la fuente 2 con la fuente 1 en 0 V).
+     Restaura el montaje del usuario al terminar. */
+  function pruebas(){
+    const TOL_MONTAJE_PCT = 1e-3;   // % · frente a la teoría del montaje: solo la fuga de 1 nS por nodo (≈10⁻⁶ relativo)
+    const TOL_FUENTE_PCT = 1e-2;    // % · corriente de la fuente: además la fuga de sus nodos internos (como TOL_FUGA_PCT en P5)
+    const TOL_IDEAL_PCT = PruebasMotor.CRITERIO_ESTABLE_PCT;   // % · frente a la teoría ideal de dos mallas (shunts, r interna)
+    const filas=[], err=(x,t)=>Math.abs(x-t)/Math.abs(t)*100;
+    const fila=(prueba, obtenido, esperado, error, pasa, criterio)=>filas.push({prueba, obtenido, esperado, error, pasa, criterio:criterio||''});
+    const pct=x=>`< ${String(x).replace('.',',')} %`;
+    // 1) lógica pura
+    const v=B.valores(0, 12, 13);
+    fila('valores 0 → 12 V en 13 puntos: extremos y paso de 1 V exactos', v.join(' '), '0 1 … 12', null, v.length===13 && v[0]===0 && v[12]===12 && v.every((x,k)=>x===k));
+    const w=B.valores(0.1, 0.3, 3);
+    fila('valores 0,1 → 0,3 V: el último es 0,3 exacto (sin 0,30000000000000004)', String(w[2]), '0.3', null, w[2]===0.3 && w[1]===0.2);
+    const malos=[{v0:5,v1:5,n:3},{v0:0,v1:5,n:1},{v0:0,v1:31,n:3},{v0:NaN,v1:5,n:3},{v0:0,v1:5,n:2.5}].filter(p=>B.validar(p)).length;
+    fila('validar rechaza V0 = V1, N = 1, 31 V, NaN y N no entero', `${malos}/5`, '5/5', null, malos===5);
+    const e=B.ajustar([0,1,2,3,4], [1,3,5,7,9]);
+    fila('ajuste de y = 2x + 1 exacta: m, b y R²', `${e.pendiente} · ${e.ordenada} · ${e.r2}`, '2 · 1 · 1', null,
+      Math.abs(e.pendiente-2)<1e-12 && Math.abs(e.ordenada-1)<1e-12 && Math.abs(e.r2-1)<1e-12);
+    const h=B.ajustar([0,1,2,3], [0,1,1,3]);   // a mano: m = 4,5/5 = 0,9; b = 1,25 − 0,9·1,5 = −0,1; R² = 4,5²/(5·4,75)
+    fila('ajuste de (0,0) (1,1) (2,1) (3,3): m = 0,9, b = −0,1, R² = 0,852632 (a mano)', `${h.pendiente.toFixed(6)} · ${h.ordenada.toFixed(6)} · ${h.r2.toFixed(6)}`,
+      '0.900000 · -0.100000 · 0.852632', null, Math.abs(h.pendiente-0.9)<1e-12 && Math.abs(h.ordenada+0.1)<1e-12 && Math.abs(h.r2-20.25/23.75)<1e-12);
+    const c=B.ajustar([0,1,2], [5e-3,5e-3,5e-3]);
+    fila('magnitud que no cambia: se marca constante (m = 0, R² sin definir)', `${c.constante} · ${c.pendiente} · ${c.r2}`, 'true · 0 · null', null, c.constante && c.pendiente===0 && c.r2===null);
+
+    // 2) y 3) sobre el protoboard, con las funciones reales del simulador
+    const copia=JSON.stringify({wires:st.wires, wid:st.wid, ideal:st.ideal, res:st.res, srcs:st.srcs.map(s=>({V:s.V,on:s.on}))});
+    try{
+      ['R1','R2','R3','R4','R5','R6'].forEach(k=>{ st.res[k].dev=0; });
+      preset('divisor');
+      st.srcs[0].V=7.5;                                     // valor "del usuario" que debe volver al terminar
+      const r=barrer({fuente:0, v0:0, v1:12, n:13});
+      const R1=nominal(st.res.R1.bands), R4=nominal(st.res.R4.bands);
+      const R4v=R4*(VMR+2*RWIRE)/(R4+VMR+2*RWIRE), Rt=RINT+4*RWIRE+R1+BURDEN+R4v;
+      const aA=r.ajustes.MA, aV=r.ajustes.MV;
+      fila(`divisor: 1/m del amperímetro = R_int + 4 cables + R1 + R_shunt + R4 ‖ R_in = ${fmt(Rt,'Ω',7)}`, 1/aA.pendiente, Rt, err(1/aA.pendiente, Rt), err(1/aA.pendiente, Rt)<TOL_MONTAJE_PCT, pct(TOL_MONTAJE_PCT));
+      fila('divisor: ganancia del voltímetro = (R4 ‖ R_in) / R_total', aV.pendiente, R4v/Rt, err(aV.pendiente, R4v/Rt), err(aV.pendiente, R4v/Rt)<TOL_MONTAJE_PCT, pct(TOL_MONTAJE_PCT));
+      fila('divisor: 1/m de la corriente de la fuente = la misma R_total (la fuga de 1 nS por nodo es despreciable)', 1/r.ajustes.IF.pendiente, Rt, err(1/r.ajustes.IF.pendiente, Rt), err(1/r.ajustes.IF.pendiente, Rt)<TOL_FUENTE_PCT, pct(TOL_FUENTE_PCT));
+      const peorR2=Math.min(...r.magnitudes.map(m=>r.ajustes[m.clave].r2));
+      fila('divisor: respuesta lineal, 1 − R² de todas las magnitudes', 1-peorR2, 0, null, 1-peorR2<1e-9, '< 10⁻⁹');
+      fila('divisor: ordenada del amperímetro (única fuente ⇒ b = 0)', aA.ordenada, 0, null, Math.abs(aA.ordenada)<1e-12, '< 10⁻¹² A');
+      const ult=r.filas[r.filas.length-1];
+      st.srcs[0].V=12; const d=solveDC();
+      const iMan=(d.V('MAr')-d.V('MAb'))/BURDEN;
+      fila('divisor: el punto de 12 V coincide con mover la fuente a mano a 12 V', ult.y.MA, iMan, err(ult.y.MA, iMan), err(ult.y.MA, iMan)<1e-9, pct('10⁻⁹'));
+      st.srcs[0].V=7.5;
+      const r2=barrer({fuente:0, v0:0, v1:12, n:13});
+      fila('la fuente vuelve a su tensión y estado después del barrido', `${st.srcs[0].V} V · ${st.srcs[0].on?'encendida':'apagada'}`, '7.5 V · encendida', null,
+        r2.ok && st.srcs[0].V===7.5 && st.srcs[0].on===true);
+      st.srcs[1].on=false; st.srcs[1].V=3;
+      const rf=barrer({fuente:1, v0:0, v1:5, n:3});
+      fila('una fuente apagada se enciende solo durante el barrido', `${st.srcs[1].V} V · ${st.srcs[1].on?'encendida':'apagada'}`, '3 V · apagada', null, st.srcs[1].V===3 && !st.srcs[1].on);
+      const gF2=Math.abs(rf.ajustes.IF.pendiente);
+      fila('fuente 2 sin conectar: ve un circuito abierto (solo la fuga de 1 nS por nodo del modelo)', 1/gF2, 1e8, null, gF2<G_ABIERTO, '> 100 MΩ');
+
+      // 3) P5: barrido de la fuente 1 con la fuente 2 encendida (5 V)
+      const ids=M.aplicarMontaje(st, M.MONTAJE_P5);
+      ['R1','R2','R3'].forEach(k=>{ st.res[k].dev=0; });
+      const [am1,,,,vm2]=ids, P=PruebasMotor.P5_REF;
+      const th1=PruebasMotor.teoriaDosMallas(Object.assign({}, P, {V1:1, V2:0}));   // ∂/∂V1 (sin la fuente 2)
+      const th0=PruebasMotor.teoriaDosMallas(Object.assign({}, P, {V1:0}));          // aporte de la fuente 2
+      const rp=barrer({fuente:0, v0:0, v1:12, n:7});
+      const a1=rp.ajustes[am1], a2=rp.ajustes[vm2];
+      fila(`P5: pendiente de ${am1} = ∂I1/∂V1 de la teoría de dos mallas`, a1.pendiente, th1.I1, err(a1.pendiente, th1.I1), err(a1.pendiente, th1.I1)<TOL_IDEAL_PCT, pct(TOL_IDEAL_PCT));
+      fila(`P5: ordenada de ${am1} = I1 con V1 = 0 (aporte de la fuente 2, superposición)`, a1.ordenada, th0.I1, err(a1.ordenada, th0.I1), err(a1.ordenada, th0.I1)<TOL_IDEAL_PCT, pct(TOL_IDEAL_PCT));
+      fila(`P5: pendiente de ${vm2} = ∂Va/∂V1`, a2.pendiente, th1.Va, err(a2.pendiente, th1.Va), err(a2.pendiente, th1.Va)<TOL_IDEAL_PCT, pct(TOL_IDEAL_PCT));
+      fila(`P5: ordenada de ${vm2} = Va con V1 = 0`, a2.ordenada, th0.Va, err(a2.ordenada, th0.Va), err(a2.ordenada, th0.Va)<TOL_IDEAL_PCT, pct(TOL_IDEAL_PCT));
+    }catch(ex){
+      fila('el barrido sobre el protoboard terminó sin errores', String(ex && ex.message || ex), 'sin errores', null, false);
+    }finally{
+      const d=JSON.parse(copia);
+      st.wires=d.wires; st.wid=d.wid; st.ideal=d.ideal; st.res=d.res;
+      d.srcs.forEach((s,i)=>Object.assign(st.srcs[i], s));
+      buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw(); PanelOsciloscopio.construirControles();
+    }
+    return filas;
+  }
+
+  construirControles();
+  return Object.freeze({ ejecutar, barrer, magnitudes, pruebas, construirControles, ultimo:()=>ultimo });
 })();
 </script>
 
@@ -5425,6 +5892,7 @@ const BancoTransitorios = (function(){
       const p5=pruebaP5EnProtoboard();
       const osc=pruebaOscEnProtoboard();
       const ida=pruebaIdaVueltaEnProtoboard();
+      const bar=PanelBarrido.pruebas();        // [incr. 9] fuente variable: barrido de tensión
       const ms=performance.now()-t0;
       const pasanReg=reg.filter(f=>f.pasa).length;
       let h=`<div class="caja"><h3>Pruebas del motor: ${R.pasan}/${R.total} cumplen · regresión de los ejemplos del base: ${pasanReg}/${reg.length} · ${ms.toFixed(0)} ms</h3>
@@ -5453,9 +5921,11 @@ const BancoTransitorios = (function(){
       });
       h+=`<tr class="g"><td colspan="6">Ejemplos del protocolo: guardar → cargar → mismo montaje, mismas lecturas y mismas trazas</td></tr>`;
       ida.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">—</td><td></td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
-      h+=`</tbody></table><p class="hint">Mismas pruebas que <code>node pruebas/ejecutar_pruebas.js</code>. La regresión pone las resistencias en su valor nominal, compara con las lecturas del simulador original y restaura tu montaje al terminar.</p></div>`;
+      h+=`<tr class="g"><td colspan="6">Fuente variable · barrido de tensión (incremento 9): lógica, divisor del base frente a la teoría del montaje y superposición en P5</td></tr>`;
+      bar.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${f.error===null?'—':formatoPct(f.error)}</td><td>${f.criterio}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
+      h+=`</tbody></table><p class="hint">Mismas pruebas que <code>node pruebas/ejecutar_pruebas.js</code>, más las del barrido de tensión (incremento 9), que solo corren en el navegador. La regresión pone las resistencias en su valor nominal, compara con las lecturas del simulador original y restaura tu montaje al terminar.</p></div>`;
       L('bancoPruebas').innerHTML=h;
-      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio y ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos cumplen.`);
+      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos y ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión cumplen.`);
     }, 30);
   }
 
