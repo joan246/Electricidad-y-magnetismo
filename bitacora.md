@@ -63,6 +63,32 @@ Convenciones:
   * restauración de la fuente.
 * Estado: 308/308 del motor, 19/19 del barrido y 99/99 de la validación, sin errores en la consola. Las pruebas del barrido usan la interfaz y no están en `pruebas/ejecutar_pruebas.js`.
 
+### 31-oct-2026 · Incremento 10: potenciómetro y máxima transferencia de potencia (Miguel Hinestroza, con IA)
+* **Componente nuevo `POT`:** tres terminales (A, cursor C, B).
+  * Se modela como dos resistencias R_AC = R·α_e y R_CB = R·(1 − α_e) que comparten el nodo del cursor.
+  * **Decisión:** α_e = ε + (1 − 2ε)·α, con ε = 0,1 % de resistencia residual en los extremos. El motor no acepta R = 0, y así R_AC + R_CB = R siempre: el óhmetro entre A y B lee R en cualquier posición.
+* **Decisión:** el cursor va en la columna intermedia entre A y B, en la misma fila (`cursorPotenciometro`, función pura sobre los nombres de los orificios).
+  * El JSON no cambia de formato: guarda `a`, `b` y `posicion`, y el cursor se deduce.
+  * El potenciómetro siempre se coloca horizontal: vertical no deja una columna para el cursor.
+* **Problema:** en `diagnostico`, el nodo del cursor siempre parecía conectado, porque ya recibe dos terminales del propio potenciómetro. **Solución:** el cursor queda en el aire si su nodo no tiene más de 2 terminales. Usarlo como reóstato (dos terminales) no avisa.
+* **Problema:** `cursorDe(k)` devolvía una «columna del cursor» también para resistencias colocadas en una franja. **Solución:** solo responde para el tipo `POT`. Lo detectó la revisión antes de las pruebas.
+* El control del cursor no reconstruye la tarjeta mientras se arrastra (la misma corrección que el deslizador de las fuentes).
+* `avisosMontaje()` se separó de `mostrarAvisosMontaje()` para poder probar los avisos.
+* **Barrido del cursor** en la tarjeta de barridos (variable «cursor de un potenciómetro»):
+  * `analizarPotenciometro` reconoce el modo **reóstato**: con la recta v_L = V_th − R_th·i_L obtiene V_th y R_th, y compara P_máx = V_th²/(4R_th) en R_L = R_th con el máximo medido, refinado con una parábola por los 3 puntos mayores.
+  * Reconoce también el modo **divisor** y mide el efecto de carga frente a R_CB/R.
+* Ejemplos nuevos «Potenciómetro · divisor» y «Potenciómetro · máxima transferencia». Van fuera de `EJEMPLOS` para no cambiar los 11 montajes del protocolo.
+* 21 pruebas nuevas:
+  * modelo y JSON;
+  * óhmetro: R_AB = 10 kΩ a 6·10⁻⁴ %;
+  * divisor frente a la teoría del montaje (4·10⁻⁵ % de 12 V);
+  * efecto de carga con 10 kΩ frente a la fórmula exacta (10⁻⁴ %);
+  * máxima transferencia: R_th a 9·10⁻⁵ %, V_th a 5·10⁻⁵ % y P_máx a 0,001 %;
+  * R_L del máximo a 0,5 %, por la separación de 100 Ω entre puntos;
+  * avisos y colocación.
+* También se comprobó con el osciloscopio: con el cursor en 25 %, v_CB = 8,975 V, igual que el cálculo a mano.
+* Estado: 308/308 del motor, 19/19 del barrido, 21/21 del potenciómetro y 99/99 de la validación, sin errores en la consola.
+
 ---
 
 ## 2. Reuniones del grupo [completar]
@@ -101,3 +127,4 @@ Lo que cada integrante comprobó por su cuenta: por ejemplo, el cálculo a mano 
 |---|---|---|---|
 | 14 a 20-oct-2026 | Claude (Anthropic), Claude Code | análisis del base, código del motor, interfaz, pruebas y borradores de los documentos | [completar: qué revisó cada integrante] |
 | 30-oct-2026 | Claude (Anthropic) | prueba del simulador, corrección del deslizador de las fuentes, incremento 9 (barrido de tensión), sus pruebas y la documentación | [completar: qué revisó Miguel] |
+| 31-oct-2026 | Claude (Anthropic) | incremento 10 (potenciómetro, barrido del cursor, máxima transferencia y efecto de carga), sus pruebas y la documentación | [completar: qué revisó Miguel] |
