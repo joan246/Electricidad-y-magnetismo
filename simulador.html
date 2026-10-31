@@ -121,6 +121,7 @@ svg#lab{width:100%;height:auto;display:block;background:linear-gradient(180deg,#
 .cmsg{font-size:11px;color:var(--red);margin-top:4px;min-height:0}
 .mrow .v.tenue{color:var(--ink-faint);font-weight:400;font-size:12px}
 .e12{font-size:11px;color:var(--ink-faint);margin-top:4px}
+.potcur{margin-top:6px} .potcur input[type=range]{flex:1;min-width:90px} .potcur input[type=number]{width:64px}
 /* ===== AMPLIACIÓN v1 · tarjeta de simulación temporal (solo se agregan reglas) ===== */
 details.tcard{margin-top:14px;background:var(--panel);border:1px solid var(--edge);border-radius:8px;box-shadow:0 24px 60px #0007}
 details.tcard>summary{list-style:none;cursor:pointer;padding:11px 16px;display:flex;align-items:center;gap:9px;
@@ -238,6 +239,7 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
         <button class="mini" id="addR">+ Resistencia</button>
         <button class="mini" id="addC">+ Capacitor</button>
         <button class="mini" id="addL">+ Inductor</button>
+        <button class="mini" id="addPOT">+ Potenciómetro</button>
       </div>
       <div class="btnrow" style="margin-top:6px">
         <button class="mini" id="addVM">+ Voltímetro</button>
@@ -256,7 +258,10 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
         el voltímetro lee v(+) − v(−) y el amperímetro la corriente que entra por +. Sus lecturas son el valor calculado por el motor, sin ruido.<br><br>
         <b>Generador:</b> fuente seno, cuadrada, triangular o DC con resistencia interna r<sub>int</sub> (50 Ω por defecto); rojo = salida, negro = tierra.
         Con forma «DC» es una fuente DC más. Los instrumentos DC leen su <b>valor medio</b>; la forma de onda se ve en el osciloscopio.
-        <b>Sonda:</b> un canal del osciloscopio (R<sub>in</sub> = 1 MΩ).</p>
+        <b>Sonda:</b> un canal del osciloscopio (R<sub>in</sub> = 1 MΩ).<br><br>
+        <b>Potenciómetro:</b> tres patas en una franja: los extremos A y B y el <b>cursor</b> en la columna intermedia (anillo naranja).
+        Entre A y B siempre hay R; el cursor la divide en R<sub>AC</sub> = α·R y R<sub>CB</sub> = (1 − α)·R. Úsalo como divisor (A y B a la
+        fuente, salida en el cursor) o como reóstato (solo A y el cursor). Su posición se mueve con el control de su tarjeta.</p>
     </div>
   </details>
 
@@ -290,6 +295,8 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
         <button class="mini" id="ejemploP5">P5 · dos mallas, dos fuentes</button>
         <button class="mini" id="ejemploOscRC">Osciloscopio · carga RC</button>
         <button class="mini" id="ejemploOscFiltro">Osciloscopio · filtro RC con generador</button>
+        <button class="mini" id="ejemploPotDivisor">Potenciómetro · divisor</button>
+        <button class="mini" id="ejemploPotMaxima">Potenciómetro · máxima transferencia</button>
       </div>
       <label class="fld" style="margin-top:12px">Ejemplos del protocolo de validación (P1–P5)</label>
       <div class="row"><select id="ejemploProtocolo" style="flex:1;min-width:0"></select><button class="mini" id="cargarEjemplo">Cargar</button></div>
@@ -398,7 +405,7 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
 
 <!-- ===== AMPLIACIÓN · barrido de tensión con la fuente variable (incremento 9) ===== -->
 <details class="tcard" id="cardBarrido" open>
-  <summary>Fuente variable · barrido de tensión <span class="tag2">incremento 9</span></summary>
+  <summary>Barridos · fuente variable y potenciómetro <span class="tag2">incrementos 9 y 10</span></summary>
   <div class="tbody">
     <p class="hint" style="margin-top:0">
       Varía la tensión de una fuente del banco de V<sub>inicial</sub> a V<sub>final</sub> en N puntos y, en cada uno, resuelve el montaje en DC y lee
@@ -407,11 +414,16 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
       <b>1/m = ΔV/ΔI</b> es la resistencia equivalente que ella ve (ley de Ohm); si es una tensión, <b>m</b> es la ganancia (la razón de un divisor).
       Una ordenada b ≠ 0 es el aporte de las <b>otras fuentes encendidas</b> (superposición): con P5, por ejemplo, la corriente de la fuente 1 cruza
       cero en la tensión en que la fuente 2 la equilibra.
-      La fuente se enciende solo durante el barrido y luego vuelve a su tensión y estado. Las lecturas son las del motor, sin ruido.
+      La fuente se enciende solo durante el barrido y luego vuelve a su tensión y estado. Las lecturas son las del motor, sin ruido.<br><br>
+      <b>Cursor de un potenciómetro</b> (incremento 10): recorre la posición del cursor de 0 a 100 %. Si el potenciómetro trabaja como
+      <b>reóstato</b> (A y cursor), calcula el equivalente de Thévenin que ve y comprueba la <b>máxima transferencia de potencia</b>
+      (P<sub>L</sub> máxima con R<sub>L</sub> = R<sub>th</sub>); si trabaja como <b>divisor</b>, mide el <b>efecto de carga</b> en el cursor.
+      Los ejemplos «Potenciómetro · …» de «Circuitos de ejemplo» lo dejan listo.
     </p>
     <div class="ctrls" id="barCtrls"></div>
     <div class="estado" id="barEstado">Arma un circuito (o carga un ejemplo) y pulsa «Ejecutar barrido».</div>
     <div id="barGrafica"></div>
+    <div class="caja" id="barPotCaja" style="margin-top:12px;display:none"><h3>Análisis del potenciómetro (incremento 10)</h3><div id="barPot"></div></div>
     <div class="caja" style="margin-top:12px"><h3>Ajuste lineal de cada magnitud</h3><div id="barAjustes"><p class="empty">Sin barrido.</p></div></div>
     <div class="caja" style="margin-top:12px"><h3>Puntos del barrido</h3><div id="barTabla" class="barTabla"><p class="empty">Sin barrido.</p></div></div>
   </div>
@@ -2528,8 +2540,39 @@ const ModeloMontaje = (function(){
     // incr. 6: generador de funciones (fuente ideal en serie con r_int; con forma "dc" es una
     // fuente DC más) y sonda de osciloscopio (canal: R_in entre la punta y su pinza de referencia)
     GEN:{nombre:'Generador', unidad:'Ω', valorDefecto:50, minimo:1e-3, maximo:1e3, prefijos:['m','','k'], parametro:'r_int', e12:false, fuente:true},
-    CH: {nombre:'Sonda de osciloscopio', unidad:'Ω', valorDefecto:1e6, minimo:1e3, maximo:1e12, prefijos:['k','M','G'], parametro:'R_in', e12:false, medidor:'V', sonda:true}
+    CH: {nombre:'Sonda de osciloscopio', unidad:'Ω', valorDefecto:1e6, minimo:1e3, maximo:1e12, prefijos:['k','M','G'], parametro:'R_in', e12:false, medidor:'V', sonda:true},
+    // incr. 10: potenciómetro de tres terminales (A, cursor C y B); valor = R total entre A y B,
+    // posicion = α ∈ [0, 1] (0: cursor en A, 1: cursor en B). Ver segmentosPot().
+    POT:{nombre:'Potenciómetro', unidad:'Ω', valorDefecto:10e3, minimo:10, maximo:10e6, prefijos:['','k','M'], parametro:'R', e12:false, tresTerminales:true}
   });
+  /* ---------- potenciómetro (incr. 10) ----------
+     Dos resistencias en serie que comparten el nodo del cursor C:
+         R_AC = R·α_e,   R_CB = R·(1 − α_e),   α_e = ε + (1 − 2ε)·α
+     ε = RESIDUAL_POT es la resistencia residual de los extremos: el cursor de un potenciómetro
+     real nunca toca del todo el extremo (los fabricantes la dan como «end resistance», del orden
+     de 0,1–1 % de R). Con ella ningún segmento vale 0 Ω (el motor no acepta R = 0) y R_AC + R_CB = R
+     para cualquier posición: entre A y B siempre se mide R. */
+  const RESIDUAL_POT = 0.001;            // ε · 0,1 % de R en cada extremo
+  const POSICION_DEFECTO = 0.5;          // cursor centrado
+  const POTENCIA_NOMINAL_POT = 0.5;      // W · potencia típica de un potenciómetro de carbón (aviso en el análisis)
+  const alfaEfectivo = a => RESIDUAL_POT + (1-2*RESIDUAL_POT)*Math.min(1, Math.max(0, a));
+  function segmentosPot(c){
+    const ae=alfaEfectivo(Number.isFinite(c.posicion) ? c.posicion : POSICION_DEFECTO);
+    return {ac:c.valor*ae, cb:c.valor*(1-ae), alfaEfectivo:ae};
+  }
+  // Orificio del cursor: la columna intermedia entre A y B, en la misma fila y mitad del protoboard
+  // (las tres patas van en una franja, como en un potenciómetro real). null si A y B no están en
+  // una misma fila o no dejan una columna libre entre ellos (rieles, vertical, columnas vecinas).
+  function cursorPotenciometro(a, b){
+    const ma=/^([TB])(\d+)([A-J])$/.exec(a||''), mb=/^([TB])(\d+)([A-J])$/.exec(b||'');
+    if(!ma || !mb || ma[1]!==mb[1] || ma[3]!==mb[3]) return null;
+    const ca=+ma[2], cb=+mb[2], d=Math.abs(cb-ca);
+    if(d<2) return null;
+    return `${ma[1]}${Math.min(ca,cb)+Math.floor(d/2)}${ma[3]}`;
+  }
+  function validarPosicion(x, id){
+    return (Number.isFinite(x) && x>=0 && x<=1) ? null : `${id}: la posición del cursor debe estar entre 0 y 100 %.`;
+  }
   const FORMA_DEFECTO = Object.freeze({tipo:'seno', amplitud:1, frecuencia:1000, dc:0, ciclo:0.5, fase:0});
   const FORMAS_GEN = Object.freeze(['seno','cuadrada','triangular','dc']);
   const esMedidor = c => !!(TIPOS[tipoDe(c)] && TIPOS[tipoDe(c)].medidor);
@@ -2573,6 +2616,7 @@ const ModeloMontaje = (function(){
     const id=nuevoId(mapa, tipo);
     mapa[id]={id, tipo, valor:(valor===undefined ? TIPOS[tipo].valorDefecto : valor), a:null, b:null};
     if(tipo==='GEN') mapa[id].forma=Object.assign({}, FORMA_DEFECTO);
+    if(tipo==='POT') mapa[id].posicion=POSICION_DEFECTO;
     return id;
   }
   // Valida la forma de onda de un generador (null si es aceptable)
@@ -2595,14 +2639,15 @@ const ModeloMontaje = (function(){
   const esDelBase = id => IDS_BASE.includes(id);
   // Cuántos componentes de cada tipo hay en el protoboard (para la barra superior)
   function resumenColocados(mapa){
-    const n={R:0, C:0, L:0, VM:0, AM:0, GEN:0, CH:0};
+    const n={R:0, C:0, L:0, VM:0, AM:0, GEN:0, CH:0, POT:0};
     Object.values(mapa).forEach(c=>{ if(c.a) n[tipoDe(c)]++; });
     return n;
   }
   function textoColocados(mapa){
     const n=resumenColocados(mapa);
     return `${n.R} resistencias`+(n.C?` · ${n.C} C`:'')+(n.L?` · ${n.L} L`:'')+(n.VM?` · ${n.VM} voltímetro${n.VM>1?'s':''}`:'')+(n.AM?` · ${n.AM} amperímetro${n.AM>1?'s':''}`:'')
-      +(n.GEN?` · ${n.GEN} generador${n.GEN>1?'es':''}`:'')+(n.CH?` · ${n.CH} canal${n.CH>1?'es':''}`:'');
+      +(n.GEN?` · ${n.GEN} generador${n.GEN>1?'es':''}`:'')+(n.CH?` · ${n.CH} canal${n.CH>1?'es':''}`:'')
+      +(n.POT?` · ${n.POT} potenciómetro${n.POT>1?'s':''}`:'');
   }
 
   /* ---------- medidores (incr. 5) ----------
@@ -2610,9 +2655,16 @@ const ModeloMontaje = (function(){
        C, L: el mismo tipo;  voltímetro: R = R_in;  amperímetro: R = R_shunt.
      Lectura (con la corriente i que calcula el motor, de la punta roja "a" a la negra "b"):
        voltímetro: v = i·R_in = v(a) − v(b);  amperímetro: i. */
-  function elementoMotor(id, c, n1, n2){
+  function elementoMotor(id, c, n1, n2, n3){
     const T=TIPOS[tipoDe(c)];
     if(T.medidor) return {id, tipo:'R', n1, n2, valor:c.valor, medidor:T.medidor};
+    if(T.tresTerminales){
+      // Potenciómetro (incr. 10): R_AC entre A (n1) y el cursor (n3), R_CB entre el cursor y B (n2).
+      // Las corrientes del motor van de A al cursor (id:ac) y del cursor a B (id:cb).
+      const s=segmentosPot(c);
+      return [{id:id+':ac', tipo:'R', n1, n2:n3, valor:s.ac, pot:id},
+              {id:id+':cb', tipo:'R', n1:n3, n2, valor:s.cb, pot:id}];
+    }
     if(T.fuente){
       // Generador (incr. 6): fuente ideal (id) entre un nodo interno y b, y r_int (id:r) entre a y
       // ese nodo. Se guardan la forma (para el transitorio) y su valor medio (para DC).
@@ -2660,7 +2712,10 @@ const ModeloMontaje = (function(){
      · terminal "en el aire": al nodo de ese terminal no llega ningún otro elemento
      · componente sin fuente: su grupo de nodos no toca ninguna fuente encendida
      Los voltímetros (R_in grande) no cuentan como conexión: medir no "conecta" un circuito.
-     colocados = [{id, tipo, n1, n2, ha, hb}] (ha, hb = nombre de los orificios). */
+     colocados = [{id, tipo, n1, n2, ha, hb}] (ha, hb = nombre de los orificios).
+     Potenciómetro (incr. 10): trae además n3 y hc (cursor). Su cursor ya recibe DOS terminales
+     propios (R_AC y R_CB), así que queda en el aire si el nodo no tiene más de 2. Usarlo con solo
+     dos terminales (reóstato) es normal: solo se avisa si quedan dos o tres terminales libres. */
   function diagnostico(els, srcs, reac, colocados){
     const conexiones=[];
     els.forEach(e=>{ if(e[3]!=='VM') conexiones.push([e[0], e[1]]); });
@@ -2675,6 +2730,13 @@ const ModeloMontaje = (function(){
     const conFuente=new Set((srcs||[]).map(s=>raiz(s.p)).concat(elems.filter(c=>c.generador).map(c=>raiz(c.n1))));
     const avisos=[], sinFuente=[];
     colocados.forEach(c=>{
+      if(c.n3!==undefined){            // potenciómetro: A, B y cursor
+        const libres=[[c.n1,c.ha,1],[c.n2,c.hb,1],[c.n3,c.hc,2]].filter(([nd,,propios])=>(grado.get(nd)||0)<=propios);
+        if(libres.length===3) avisos.push(`${c.id} está en el protoboard pero ninguno de sus terminales está conectado.`);
+        else if(libres.length===2) avisos.push(`${c.id}: solo un terminal está conectado; use al menos dos (A o B y el cursor en ${c.hc}).`);
+        else if(conFuente.size && !conFuente.has(raiz(c.n3))) sinFuente.push(c.id);
+        return;
+      }
       const libres=[[c.n1,c.ha],[c.n2,c.hb]].filter(([nd])=>(grado.get(nd)||0)<=1);
       if(libres.length===2) avisos.push(`${c.id} está en el protoboard pero ninguno de sus terminales está conectado.`);
       else if(libres.length===1) avisos.push(`${c.id}: el terminal en ${libres[0][1]} no está conectado a nada (queda en el aire).`);
@@ -2716,6 +2778,38 @@ const ModeloMontaje = (function(){
     componentes:[['GEN','T3C','B3H',{valor:50, forma:{tipo:'seno', amplitud:1, frecuencia:1/(2*Math.PI*1e-3), dc:0, ciclo:0.5, fase:0}}],
                  ['C','T8E','B8F',{valor:1e-6}], ['CH','T3B','B3I'], ['CH','T8B','B8I']]
   });
+  /* ---------- ejemplos del potenciómetro (incr. 10) ----------
+     No son parte del protocolo P1–P5 (EJEMPLOS), así la validación y sus 11 montajes no cambian.
+     Divisor: fuente 1 (12 V) entre A (columna 3) y B (columna 8, a tierra); POT1 de 10 kΩ con el
+       cursor en la columna 5. VM1 lee la salida v_CB (cursor respecto a tierra).
+     Máxima transferencia: fuente 1 (10 V) → R1 (1 kΩ, la «resistencia interna» del circuito) →
+       A de POT1 (10 kΩ, columna 7); el cursor (columna 9) va a tierra y B queda libre: POT1 es un
+       reóstato R_L = R_AC. VM1 lee v_L. P_L es máxima cuando R_L = R_th = R1 + r_int + cables. */
+  const MONTAJE_POT_DIVISOR = Object.freeze({
+    fuentes:[{i:0, V:12, on:true}, {i:1, on:false}, {i:2, on:false}],
+    cables:[['S0p','T3A','rojo'], ['S0n','RTN1','negro'], ['T8A','RTN8','negro']],
+    resistencias:{},
+    componentes:[['POT','T3C','T8C',{valor:10e3, posicion:0.5}], ['VM','T5B','T8B']]
+  });
+  const MONTAJE_POT_MAXIMA = Object.freeze({
+    fuentes:[{i:0, V:10, on:true}, {i:1, on:false}, {i:2, on:false}],
+    cables:[['S0p','T2A','rojo'], ['S0n','RTN1','negro'], ['T9A','RTN9','negro']],
+    resistencias:{R1:['T2C','T7C']},
+    componentes:[['POT','T7D','T12D',{valor:10e3, posicion:0.1}], ['VM','T7B','T9B']]
+  });
+  const EJEMPLOS_POT = Object.freeze({
+    divisor:{titulo:'Potenciómetro · divisor de tensión', montaje:MONTAJE_POT_DIVISOR,
+      descripcion:'Fuente 1 (12 V) entre los extremos de POT1 (10 kΩ); VM1 lee el cursor respecto a tierra. Mueve el cursor o haz un barrido del cursor.'},
+    maxima:{titulo:'Potenciómetro · máxima transferencia de potencia', montaje:MONTAJE_POT_MAXIMA,
+      descripcion:'Fuente 1 (10 V) → R1 (1 kΩ) → POT1 como reóstato (A y cursor). Barre el cursor: P_L es máxima cuando R_L = R_th ≈ 1 kΩ.'}
+  });
+  function construirEjemploPot(st, id){
+    const E=EJEMPLOS_POT[id];
+    IDS_BASE.forEach(k=>{ st.res[k].bands=BANDAS_BASE[k].slice(); st.res[k].dev=0; });
+    st.ideal=false;
+    aplicarMontaje(st, E.montaje);
+    return E;
+  }
   // Arma un montaje en st: saca todo del protoboard, quita los componentes agregados (C, L,
   // medidores, sondas, generadores y resistencias nuevas) y pone los del montaje. R1–R6 del
   // base se conservan y solo se mueven. En `componentes`, ['R', a, b, {bands}] crea una
@@ -2811,7 +2905,8 @@ const ModeloMontaje = (function(){
     return Object.assign({ version:VERSION_JSON, wires:st.wires,
       res:Object.fromEntries(Object.entries(st.res).map(([k,r])=>[k, tipoDe(r)==='R'
         ? {tipo:'R', bands:r.bands, dev:r.dev, a:r.a, b:r.b}
-        : Object.assign({tipo:r.tipo, valor:r.valor, a:r.a, b:r.b}, r.forma ? {forma:r.forma} : {})])),
+        : Object.assign({tipo:r.tipo, valor:r.valor, a:r.a, b:r.b}, r.forma ? {forma:r.forma} : {},
+                        tipoDe(r)==='POT' ? {posicion:r.posicion} : {})])),   // incr. 10: el cursor se deduce de a y b
       srcs:st.srcs.map(s=>({i:s.i, V:s.V, on:s.on})) }, extra||{});
   }
   // Carga un montaje en st (formato del base o versión 2). puntoValido(id) dice si el
@@ -2827,12 +2922,15 @@ const ModeloMontaje = (function(){
         const r=d.res[k], tipo=tipoDe(r);
         if(!TIPOS[tipo]){ avisos.push(`${k}: tipo de componente desconocido ("${tipo}"); no se cargó.`); continue; }
         if(tipo!=='R'){
-          const msg=validarValor(tipo, r.valor) || (tipo==='GEN' ? validarFormaGen(r.forma, k) : null);
+          const msg=validarValor(tipo, r.valor) || (tipo==='GEN' ? validarFormaGen(r.forma, k) : null)
+                    || (tipo==='POT' && r.posicion!==undefined ? validarPosicion(r.posicion, k) : null);
           if(msg){ avisos.push(`${k}: ${msg} No se cargó.`); continue; }
         }else if(!Array.isArray(r.bands) && !st.res[k]){ avisos.push(`${k}: resistencia sin bandas de color; no se cargó.`); continue; }
         st.res[k]=Object.assign(st.res[k] || {id:k}, r, {id:k, tipo});
         const c=st.res[k];
+        if(tipo==='POT' && c.posicion===undefined) c.posicion=POSICION_DEFECTO;
         if(c.a && !(puntoValido(c.a) && puntoValido(c.b))){ avisos.push(`${k}: su posición no existe en este protoboard; quedó en la bandeja.`); c.a=null; c.b=null; }
+        if(c.a && tipo==='POT' && !cursorPotenciometro(c.a, c.b)){ avisos.push(`${k}: sus extremos no dejan lugar para el cursor (deben ir en una misma fila con al menos una columna entre ellos); quedó en la bandeja.`); c.a=null; c.b=null; }
       }
     }
     if(d.srcs) d.srcs.forEach(s=>{ if(st.srcs[s.i]){ st.srcs[s.i].V=s.V; st.srcs[s.i].on=s.on; } });
@@ -2846,7 +2944,10 @@ const ModeloMontaje = (function(){
     elementoMotor, lecturaMedidor, textoLectura, MONTAJE_P5, aplicarMontaje,
     esSonda, esGenerador, FORMAS_GEN, FORMA_DEFECTO, validarFormaGen, mediaForma, hayGeneradores, aplanar,
     MONTAJE_OSC_RC, MONTAJE_OSC_FILTRO, EJEMPLOS, BANDAS_BASE, BANDAS, construirEjemplo,
-    netlist, diagnostico, aJSON, desdeJSON
+    netlist, diagnostico, aJSON, desdeJSON,
+    // incr. 10: potenciómetro
+    RESIDUAL_POT, POSICION_DEFECTO, POTENCIA_NOMINAL_POT, alfaEfectivo, segmentosPot, cursorPotenciometro, validarPosicion,
+    MONTAJE_POT_DIVISOR, MONTAJE_POT_MAXIMA, EJEMPLOS_POT, construirEjemploPot
   });
 })();
 </script>
@@ -3498,42 +3599,70 @@ const ValidacionProtocolo = (function(){
 <script id="barrido-logica">
 "use strict";
 /* ====================================================================
-   AMPLIACIÓN · (g) BARRIDO DE TENSIÓN CON LA FUENTE VARIABLE (incremento 9)
+   AMPLIACIÓN · (g) BARRIDOS: FUENTE VARIABLE (incr. 9) Y CURSOR DE UN
+   POTENCIÓMETRO (incr. 10)
    --------------------------------------------------------------------
-   Código PURO (sin DOM). Una fuente DC del protoboard recorre N valores
-   igualmente espaciados de V_0 a V_1; en cada uno se resuelve el montaje
-   en DC (medir(V), que entrega la interfaz) y se guardan las magnitudes
-   leídas. Luego cada magnitud se ajusta a una recta y = m·V + b por
+   Código PURO (sin DOM). La variable x (la tensión de una fuente del
+   banco, o la posición del cursor de un potenciómetro en %) recorre N
+   valores igualmente espaciados de x_0 a x_1; en cada uno se resuelve el
+   montaje en DC (medir(x), que entrega la interfaz) y se guardan las
+   magnitudes leídas. Cada magnitud se ajusta a una recta y = m·x + b por
    mínimos cuadrados (sumas centradas, numéricamente estables):
-       m = Σ(V−V̄)(y−ȳ) / Σ(V−V̄)²,   b = ȳ − m·V̄,
-       R² = [Σ(V−V̄)(y−ȳ)]² / [Σ(V−V̄)² · Σ(y−ȳ)²]
-   Lectura física (circuito lineal: R, y C y L en DC):
+       m = Σ(x−x̄)(y−ȳ) / Σ(x−x̄)²,   b = ȳ − m·x̄,
+       R² = [Σ(x−x̄)(y−ȳ)]² / [Σ(x−x̄)² · Σ(y−ȳ)²]
+   Fuente variable (circuito lineal: R, y C y L en DC):
      · toda tensión y corriente es una función AFÍN de cada fuente
        (superposición) ⇒ R² = 1 salvo redondeo;
      · b es el aporte de las OTRAS fuentes encendidas (b = 0 si es la única);
-     · si y es una corriente, 1/m = ΔV/ΔI es la resistencia equivalente que
-       "ve" la variación (ley de Ohm en el montaje);
+     · si y es la corriente de la fuente, 1/m = ΔV/ΔI es la resistencia
+       equivalente que ella ve (ley de Ohm en el montaje);
      · si y es una tensión, m = ΔV_y/ΔV es la ganancia (p. ej. la razón de
        un divisor de tensión).
+   Cursor de un potenciómetro: el circuito ya NO es lineal en x (R cambia),
+   y eso es lo que se estudia (analizarPotenciometro):
+     · reóstato (un segmento sin corriente): el resto del circuito es un
+       equivalente de Thévenin; con v_L = V_th − R_th·i_L (recta exacta) se
+       obtienen V_th y R_th, y la potencia en la carga es máxima cuando
+       R_L = R_th, con P_máx = V_th²/(4·R_th) (máxima transferencia);
+     · divisor (los dos segmentos con corriente): sin carga en el cursor la
+       salida es proporcional a la posición; una carga la desvía (efecto de
+       carga), y la desviación se mide punto a punto.
    ==================================================================== */
 const BarridoTension = (function(){
   const V_MIN = 0, V_MAX = 30;            // V · el mismo rango del deslizador de las fuentes del banco
   const PUNTOS_MIN = 2, PUNTOS_MAX = 201; // puntos del barrido, contando los dos extremos
-  const DEFECTO = Object.freeze({fuente:0, v0:0, v1:12, n:13});   // 0 → 12 V de 1 V en 1 V
+  const DEFECTO = Object.freeze({variable:'tension', fuente:0, v0:0, v1:12, n:13});   // 0 → 12 V de 1 V en 1 V
+  // Variables que se pueden barrer (incr. 10): rango, unidad y valores por defecto
+  const VARIABLES = Object.freeze({
+    tension:{nombre:'tensión', unidad:'V', min:V_MIN, max:V_MAX, defecto:{v0:0, v1:12, n:13}},
+    cursor: {nombre:'posición del cursor', unidad:'%', min:0, max:100, defecto:{v0:0, v1:100, n:41}}
+  });
   const DECIMALES_V = 9;                  // redondeo de los valores del barrido (evita 0,30000000000000004)
   const TOL_CONSTANTE = 1e-9;             // variación rms relativa bajo la cual la magnitud se toma como constante
-  const PREFIJOS = [['k',1e3],['',1],['m',1e-3],['µ',1e-6],['n',1e-9],['p',1e-12]];
+  const TOL_REOSTATO = 1e-4;              // un segmento «no conduce» si su corriente es < 10⁻⁴ de la del otro (fugas de 1 nS)
+  const TOL_LINEAL_PCT = 0.1;             // % de V_AB · desviación del divisor que todavía se llama «sin carga»
+  const PREFIJOS = [['M',1e6],['k',1e3],['',1],['m',1e-3],['µ',1e-6],['n',1e-9],['p',1e-12]];
   const COLORES = Object.freeze({fondo:'#0b0f12', reticula:'#1f2933', eje:'#6c7a8a', texto:'#9aa7b6',
-                                 puntos:'#4fd1e0', ajuste:'#f0a12e'});
+                                 puntos:'#4fd1e0', ajuste:'#f0a12e', marca:'#3fbf6f'});
 
   const fmt=(x,u,c)=>ModeloMontaje.formatoValor(x,u,c||4);
+  const variableDe = p => VARIABLES[(p && p.variable) || 'tension'];
+  // Texto del eje x y del valor de x (para mensajes y la gráfica)
+  function etiquetaEje(p){
+    return (p.variable==='cursor') ? `cursor de ${p.pot} (%)` : `V de la fuente ${p.fuente+1} (V)`;
+  }
+  const textoX = (p, x) => p.variable==='cursor' ? `el cursor de ${p.pot} en ${String(+x.toFixed(2)).replace('.',',')} %` : `la fuente en ${fmt(x,'V')}`;
 
   // null si los parámetros son aceptables; si no, el mensaje para el usuario
   function validar(p){
     if(!p) return 'Faltan los parámetros del barrido.';
-    if(![p.v0,p.v1].every(Number.isFinite)) return 'La tensión inicial y la final deben ser números.';
-    if(p.v0<V_MIN || p.v0>V_MAX || p.v1<V_MIN || p.v1>V_MAX) return `Use tensiones entre ${V_MIN} y ${V_MAX} V (el rango de las fuentes del banco).`;
-    if(p.v0===p.v1) return 'La tensión inicial y la final deben ser distintas.';
+    const V=variableDe(p);
+    if(!V) return 'Variable de barrido desconocida.';
+    if(![p.v0,p.v1].every(Number.isFinite)) return 'El valor inicial y el final deben ser números.';
+    if(p.v0<V.min || p.v0>V.max || p.v1<V.min || p.v1>V.max)
+      return p.variable==='cursor' ? `Use posiciones del cursor entre ${V.min} y ${V.max} %.`
+                                   : `Use tensiones entre ${V.min} y ${V.max} V (el rango de las fuentes del banco).`;
+    if(p.v0===p.v1) return 'El valor inicial y el final deben ser distintos.';
     if(!Number.isInteger(p.n) || p.n<PUNTOS_MIN || p.n>PUNTOS_MAX) return `El número de puntos debe ser un entero entre ${PUNTOS_MIN} y ${PUNTOS_MAX}.`;
     return null;
   }
@@ -3553,27 +3682,34 @@ const BarridoTension = (function(){
     for(let k=0;k<n;k++) residuoMax=Math.max(residuoMax, Math.abs(ys[k]-(m*xs[k]+b)));
     return {pendiente:m, ordenada:b, r2:(constante ? null : Math.min(1, sxy*sxy/(sxx*syy))), residuoMax, constante};
   }
-  // Ejecuta el barrido. magnitudes = [{clave, nombre, unidad:'V'|'A'}];
-  // medir(V) → {ok:true, y:{clave:valor}} o {ok:false, error}
+  // Ejecuta el barrido. magnitudes = [{clave, nombre, unidad}];
+  // medir(x) → {ok:true, y:{clave:valor}} o {ok:false, error}
   function ejecutar(p, magnitudes, medir){
     const error=validar(p);
     if(error) return {ok:false, error, filas:[]};
     if(!magnitudes || !magnitudes.length) return {ok:false, error:'No hay magnitudes que medir.', filas:[]};
     const xs=valores(p.v0, p.v1, p.n), filas=[];
-    for(const V of xs){
-      const r=medir(V);
-      if(!r || !r.ok) return {ok:false, error:`Con la fuente en ${fmt(V,'V')} el circuito no tiene solución${r && r.error ? ': '+r.error : '.'}`, filas};
-      filas.push({V, y:Object.fromEntries(magnitudes.map(m=>[m.clave, r.y[m.clave]]))});
+    for(const x of xs){
+      const r=medir(x);
+      if(!r || !r.ok) return {ok:false, error:`Con ${textoX(p, x)} el circuito no tiene solución${r && r.error ? ': '+r.error : '.'}`, filas};
+      filas.push({x, y:Object.fromEntries(magnitudes.map(m=>[m.clave, r.y[m.clave]]))});
     }
     const ajustes={};
     magnitudes.forEach(m=>{ ajustes[m.clave]=ajustar(xs, filas.map(f=>f.y[m.clave])); });
-    return {ok:true, p:Object.assign({}, p), magnitudes:magnitudes.map(m=>Object.assign({}, m)), filas, ajustes};
+    const res={ok:true, p:Object.assign({variable:'tension'}, p), magnitudes:magnitudes.map(m=>Object.assign({}, m)), filas, ajustes};
+    if(res.p.variable==='cursor') res.potenciometro=analizarPotenciometro(res);
+    return res;
   }
-  // Lo que dice la pendiente. Corriente de la propia fuente (magnitud.propia): R vista = ΔV/ΔI.
-  // Corriente de otra rama: transresistencia ΔV_F/ΔI (negativa si esa corriente baja al subir
-  // la fuente). Tensión: ganancia ΔV_y/ΔV_F.
-  function interpretar(magnitud, a){
-    if(a.constante) return {texto:'no depende de esta fuente (constante)', valor:null};
+  // Lo que dice la pendiente.
+  //   Fuente variable · corriente de la propia fuente (magnitud.propia): R vista = ΔV/ΔI;
+  //   corriente de otra rama: transresistencia ΔV_F/ΔI; tensión: ganancia ΔV_y/ΔV_F.
+  //   Cursor · cuánto cambia y de 0 a 100 % y si lo hace en línea recta.
+  function interpretar(magnitud, a, variable){
+    if(a.constante) return {texto:`no depende ${variable==='cursor' ? 'del cursor' : 'de esta fuente'} (constante)`, valor:null};
+    if(variable==='cursor'){
+      const lineal=1-a.r2<1e-6;
+      return {texto:`${lineal ? 'lineal' : 'no lineal'} · de 0 a 100 % cambia ${fmt(a.pendiente*100, magnitud.unidad, 4)} según la recta`, valor:a.pendiente*100, unidad:magnitud.unidad};
+    }
     if(magnitud.unidad==='A'){
       const R=fmt(1/a.pendiente,'Ω',5);
       return {texto: magnitud.propia ? `R vista por la fuente = ΔV/ΔI = ${R}`
@@ -3582,10 +3718,54 @@ const BarridoTension = (function(){
     }
     return {texto:`ganancia ΔV/ΔV<sub>F</sub> = ${String(+a.pendiente.toPrecision(5)).replace('.',',')}`, valor:a.pendiente, unidad:''};
   }
+
+  /* ---------- análisis del potenciómetro (incr. 10) ----------
+     Usa las magnitudes PV_AC, PV_CB (V), PI_AC, PI_CB (A, de A al cursor y del cursor a B).
+       reóstato: el segmento S conduce y el otro no ⇒ R_L = v_S/i_S y P_L = v_S·i_S en cada punto;
+                 Thévenin por la recta v_S = V_th − R_th·i_S; máximo medido refinado con la parábola
+                 por los tres puntos alrededor del mayor (en función de R_L).
+       divisor:  fracción medida v_CB/(v_AC + v_CB) frente a la de un divisor sin carga
+                 R_CB/(R_AC + R_CB), con R_xy = v_xy/i_xy de cada segmento; la diferencia es el efecto de carga. */
+  function analizarPotenciometro(res){
+    const col=k=>res.filas.map(f=>f.y[k]);
+    const xs=res.filas.map(f=>f.x), vac=col('PV_AC'), vcb=col('PV_CB'), iac=col('PI_AC'), icb=col('PI_CB');
+    if([vac,vcb,iac,icb].some(c=>c.some(v=>!Number.isFinite(v)))) return null;
+    const maxAbs=c=>Math.max(...c.map(Math.abs));
+    const Iac=maxAbs(iac), Icb=maxAbs(icb);
+    if(Iac===0 && Icb===0) return {modo:'sin corriente'};
+    let seg=null;
+    if(Icb<=TOL_REOSTATO*Iac) seg='AC'; else if(Iac<=TOL_REOSTATO*Icb) seg='CB';
+    if(seg){
+      const v=seg==='AC'?vac:vcb, i=seg==='AC'?iac:icb;
+      const RL=v.map((vk,k)=>vk/i[k]), P=v.map((vk,k)=>vk*i[k]);
+      const th=ajustar(i, v), Vth=th.ordenada, Rth=-th.pendiente;
+      let k=P.indexOf(Math.max(...P)), RLmax=RL[k], Pmax=P[k];
+      if(k>0 && k<P.length-1){                         // vértice de la parábola por (k−1, k, k+1)
+        const [x0,x1,x2]=[RL[k-1],RL[k],RL[k+1]], [y0,y1,y2]=[P[k-1],P[k],P[k+1]];
+        const d=(x0-x1)*(x0-x2)*(x1-x2);
+        const A=(x2*(y1-y0)+x1*(y0-y2)+x0*(y2-y1))/d, B=(x2*x2*(y0-y1)+x1*x1*(y2-y0)+x0*x0*(y1-y2))/d, C=y1-A*x1*x1-B*x1;
+        if(A<0){ RLmax=-B/(2*A); Pmax=C-B*B/(4*A); }
+      }
+      const rl=ajustar(xs, RL);                        // R_L es lineal en la posición: x donde R_L = R_th
+      const xOptimo=rl.constante ? NaN : (Rth-rl.ordenada)/rl.pendiente;
+      return {modo:'reostato', segmento:seg, RL, P, Vth, Rth, r2Thevenin:th.r2, PmaxTeorica:Vth*Vth/(4*Rth),
+              RLmedido:RLmax, PmaxMedida:Pmax, kMax:k, xOptimo,
+              enRango:Rth>=Math.min(...RL) && Rth<=Math.max(...RL)};
+    }
+    // divisor: los dos segmentos conducen
+    const fracMed=vcb.map((v,k)=>v/(vac[k]+vcb[k]));
+    const fracSin=vcb.map((v,k)=>{ const Rcb=v/icb[k], Rac=vac[k]/iac[k]; return Rcb/(Rac+Rcb); });
+    const desv=fracMed.map((f,k)=>(f-fracSin[k])*100);
+    const kd=desv.map(Math.abs).indexOf(Math.max(...desv.map(Math.abs)));
+    const icur=iac.map((ia,k)=>ia-icb[k]);           // corriente que sale por el cursor (hacia la carga)
+    return {modo:'divisor', fracMedida:fracMed, fracSinCarga:fracSin, desvMaxPct:Math.abs(desv[kd]), xDesvMax:xs[kd],
+            corrienteCursorMax:maxAbs(icur), sinCarga:Math.abs(desv[kd])<TOL_LINEAL_PCT};
+  }
+
   // Puntos del barrido en CSV (mismo formato que los demás CSV del simulador)
   function csv(res){
-    const filas=[[`V fuente ${res.p.fuente+1} (V)`].concat(res.magnitudes.map(m=>`${m.nombre} (${m.unidad})`))];
-    res.filas.forEach(f=>filas.push([f.V.toPrecision(10)].concat(res.magnitudes.map(m=>Number.isFinite(f.y[m.clave]) ? f.y[m.clave].toPrecision(10) : ''))));
+    const filas=[[etiquetaEje(res.p)].concat(res.magnitudes.map(m=>`${m.nombre} (${m.unidad})`))];
+    res.filas.forEach(f=>filas.push([f.x.toPrecision(10)].concat(res.magnitudes.map(m=>Number.isFinite(f.y[m.clave]) ? f.y[m.clave].toPrecision(10) : ''))));
     return filas.map(f=>f.map(c=>`"${c}"`).join(',')).join('\n');
   }
 
@@ -3605,38 +3785,52 @@ const BarridoTension = (function(){
   function prefijoEje(maxAbs){ return PREFIJOS.find(([,f])=>maxAbs>=f*0.9999995) || PREFIJOS[PREFIJOS.length-1]; }
   const numero=(x)=>String(+x.toPrecision(4)).replace('.',',');
 
+  // Fuente variable: puntos y recta ajustada. Cursor: curva por los puntos (no es una recta) y,
+  // en un reóstato, una marca vertical donde R_L = R_th (máxima transferencia).
   function graficaSVG(res, clave, opciones){
     const o=Object.assign({ancho:900, alto:340}, opciones||{});
     const mag=res.magnitudes.find(m=>m.clave===clave) || res.magnitudes[0], a=res.ajustes[mag.clave];
-    const xs=res.filas.map(f=>f.V), ys=res.filas.map(f=>f.y[mag.clave]);
+    const cursor=res.p.variable==='cursor', pot=res.potenciometro;
+    const xs=res.filas.map(f=>f.x), ys=res.filas.map(f=>f.y[mag.clave]);
     const x0=Math.min(...xs), x1=Math.max(...xs), recta=x=>a.pendiente*x+a.ordenada;
-    let ymin=Math.min(...ys, recta(x0), recta(x1)), ymax=Math.max(...ys, recta(x0), recta(x1));
+    let ymin=Math.min(...ys, ...(cursor ? [] : [recta(x0), recta(x1)])), ymax=Math.max(...ys, ...(cursor ? [] : [recta(x0), recta(x1)]));
     if(ymin>0) ymin=0; if(ymax<0) ymax=0;            // el eje y incluye el cero: se ve la proporcionalidad
     const MX=marcas(x0, x1, 10), MY=marcas(ymin, ymax, 6);
     const [pf, f]=prefijoEje(Math.max(Math.abs(MY.ini), Math.abs(MY.fin)));
     const izq=72, der=18, arr=30, abj=46, pw=o.ancho-izq-der, ph=o.alto-arr-abj;
     const X=v=>izq+(v-MX.ini)/(MX.fin-MX.ini)*pw, Y=v=>arr+ph-(v-MY.ini)/(MY.fin-MY.ini)*ph;
     const C=COLORES, txt=(x,y,t,anc,col)=>`<text x="${x}" y="${y}" fill="${col||C.texto}" font-family="ui-monospace,monospace" font-size="11" text-anchor="${anc||'middle'}">${t}</text>`;
-    let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.ancho} ${o.alto}" width="100%" role="img" aria-label="${mag.nombre} frente a la tensión de la fuente ${res.p.fuente+1}">`+
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.ancho} ${o.alto}" width="100%" role="img" aria-label="${mag.nombre} frente a ${etiquetaEje(res.p)}">`+
       `<rect width="${o.ancho}" height="${o.alto}" fill="${C.fondo}"/>`;
     MX.lista.forEach(v=>{ s+=`<line x1="${X(v)}" y1="${arr}" x2="${X(v)}" y2="${arr+ph}" stroke="${C.reticula}"/>`+txt(X(v), arr+ph+16, numero(v)); });
     MY.lista.forEach(v=>{ s+=`<line x1="${izq}" y1="${Y(v)}" x2="${izq+pw}" y2="${Y(v)}" stroke="${C.reticula}"/>`+txt(izq-7, Y(v)+4, numero(v/f), 'end'); });
     if(MY.ini<0 && MY.fin>0) s+=`<line x1="${izq}" y1="${Y(0)}" x2="${izq+pw}" y2="${Y(0)}" stroke="${C.eje}"/>`;
     s+=`<rect x="${izq}" y="${arr}" width="${pw}" height="${ph}" fill="none" stroke="${C.eje}"/>`;
-    s+=txt(izq+pw/2, o.alto-8, `V de la fuente ${res.p.fuente+1} (V)`);
+    s+=txt(izq+pw/2, o.alto-8, etiquetaEje(res.p));
     s+=`<text x="16" y="${arr+ph/2}" fill="${C.texto}" font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" transform="rotate(-90 16 ${arr+ph/2})">${mag.nombre} (${pf}${mag.unidad})</text>`;
-    // recta ajustada (punteada) y puntos del barrido
-    s+=`<line x1="${X(x0)}" y1="${Y(recta(x0))}" x2="${X(x1)}" y2="${Y(recta(x1))}" stroke="${C.ajuste}" stroke-width="2" stroke-dasharray="7 5"/>`;
+    let leyenda;
+    if(cursor){
+      s+=`<polyline points="${xs.map((x,k)=>`${X(x).toFixed(1)},${Y(ys[k]).toFixed(1)}`).join(' ')}" fill="none" stroke="${C.puntos}" stroke-width="1.6" opacity=".6"/>`;
+      if(pot && pot.modo==='reostato' && pot.enRango && Number.isFinite(pot.xOptimo) && pot.xOptimo>=MX.ini && pot.xOptimo<=MX.fin){
+        s+=`<line x1="${X(pot.xOptimo)}" y1="${arr}" x2="${X(pot.xOptimo)}" y2="${arr+ph}" stroke="${C.marca}" stroke-width="1.6" stroke-dasharray="4 4"/>`+
+           txt(X(pot.xOptimo)+5, arr+ph-8, `R_L = R_th = ${fmt(pot.Rth,'Ω')}`, 'start', C.marca);
+      }
+      leyenda = (mag.clave==='PP' && pot && pot.modo==='reostato')
+        ? `máximo medido ${fmt(pot.PmaxMedida,'W')} con R_L = ${fmt(pot.RLmedido,'Ω')} · teoría: R_L = R_th, P = V_th²/(4R_th) = ${fmt(pot.PmaxTeorica,'W')}`
+        : a.constante ? 'constante' : `R² de una recta = ${a.r2.toFixed(6).replace('.',',')} · ${interpretar(mag, a, 'cursor').texto.split(' · ')[0]}`;
+    }else{
+      s+=`<line x1="${X(x0)}" y1="${Y(recta(x0))}" x2="${X(x1)}" y2="${Y(recta(x1))}" stroke="${C.ajuste}" stroke-width="2" stroke-dasharray="7 5"/>`;
+      leyenda=a.constante ? 'constante' : `ajuste y = m·V + b · R² = ${a.r2.toFixed(6).replace('.',',')} · ${interpretar(mag, a, 'tension').texto.replace(/<\/?sub>/g,'')}`;
+    }
     xs.forEach((x,k)=>{ s+=`<circle cx="${X(x)}" cy="${Y(ys[k])}" r="3.6" fill="${C.puntos}"/>`; });
-    const I=interpretar(mag, a);
     s+=`<circle cx="${izq+10}" cy="${arr-13}" r="3.6" fill="${C.puntos}"/>`+txt(izq+19, arr-9, 'motor', 'start')+
-       `<line x1="${izq+76}" y1="${arr-13}" x2="${izq+100}" y2="${arr-13}" stroke="${C.ajuste}" stroke-width="2" stroke-dasharray="7 5"/>`+
-       txt(izq+107, arr-9, a.constante ? 'constante' : `ajuste y = m·V + b · R² = ${a.r2.toFixed(6).replace('.',',')} · ${I.texto.replace(/<\/?sub>/g,'')}`, 'start');
+       (cursor ? '' : `<line x1="${izq+76}" y1="${arr-13}" x2="${izq+100}" y2="${arr-13}" stroke="${C.ajuste}" stroke-width="2" stroke-dasharray="7 5"/>`)+
+       txt(cursor ? izq+76 : izq+107, arr-9, leyenda, 'start');
     return s+'</svg>';
   }
 
-  return Object.freeze({ V_MIN, V_MAX, PUNTOS_MIN, PUNTOS_MAX, DEFECTO, TOL_CONSTANTE,
-    validar, valores, ajustar, ejecutar, interpretar, csv, graficaSVG, marcas, pasoRedondo });
+  return Object.freeze({ V_MIN, V_MAX, PUNTOS_MIN, PUNTOS_MAX, DEFECTO, VARIABLES, TOL_CONSTANTE, TOL_REOSTATO, TOL_LINEAL_PCT,
+    validar, valores, ajustar, ejecutar, interpretar, analizarPotenciometro, etiquetaEje, csv, graficaSVG, marcas, pasoRedondo });
 })();
 </script>
 
@@ -3709,11 +3903,42 @@ function generadorAt(x1,y1,x2,y2,forma){
     `<rect x="${-B/2}" y="${-H/2}" width="${B}" height="${H}" rx="5" fill="#2a1f3a" stroke="${COLOR_GENERADOR}" stroke-width="1.6"/>`+
     `<path d="${onda}" fill="none" stroke="${COLOR_GENERADOR}" stroke-width="1.8" transform="rotate(${-ang})"/></g>`;
 }
+// Potenciómetro (incr. 10): cuerpo azul con la pista resistiva en zigzag y la flecha del cursor
+// sobre la pista en la posición α (como en el símbolo). `cursor` = {x, y} del orificio del cursor
+// en el protoboard (en la bandeja no hay): se marca con un anillo y una línea hasta la flecha.
+const COLOR_POT = '#1f5fa8', BORDE_POT = '#123a69', COLOR_CURSOR = '#f0a12e';
+function potenciometroAt(x1,y1,x2,y2,posicion,cursor){
+  const d=Math.hypot(x2-x1,y2-y1), B=Math.max(40,Math.min(64,d-20)), H=22, g=patasComponente(x1,y1,x2,y2,B);
+  const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+  const zig=[]; const n=8, w=B-14;
+  for(let k=0;k<=n;k++) zig.push(`${(-w/2+w*k/n).toFixed(1)},${k===0||k===n ? 0 : (k%2 ? -4 : 4)}`);
+  const xa=-w/2+w*Math.min(1, Math.max(0, posicion));     // flecha del cursor sobre la pista
+  let s=g.abre+
+    `<rect x="${-B/2}" y="${-H/2}" width="${B}" height="${H}" rx="3" fill="${COLOR_POT}" stroke="${BORDE_POT}"/>`+
+    `<polyline points="${zig.join(' ')}" fill="none" stroke="#e7ecf2" stroke-width="1.6" stroke-linejoin="round"/>`+
+    `<path d="M${xa},${-H/2-9} L${xa},${-5} M${xa-3.5},${-9} L${xa},${-5} L${xa+3.5},${-9}" fill="none" stroke="${COLOR_CURSOR}" stroke-width="2" stroke-linecap="round"/>`+
+    `<rect x="${-B/2}" y="${-H/2}" width="${B}" height="${H}" rx="3" fill="url(#cylG)" opacity=".5"/></g>`;
+  if(cursor){
+    // de la cola de la flecha al orificio del cursor (en coordenadas del protoboard)
+    const rad=ang*Math.PI/180, cx=(x1+x2)/2, cy=(y1+y2)/2;
+    const P=(u,v)=>({x:cx+u*Math.cos(rad)-v*Math.sin(rad), y:cy+u*Math.sin(rad)+v*Math.cos(rad)});
+    const cola=P(xa, -H/2-9), codo=P((cursor.x-cx)*Math.cos(rad)+(cursor.y-cy)*Math.sin(rad), -H/2-9);
+    s+=`<polyline points="${cola.x.toFixed(1)},${cola.y.toFixed(1)} ${codo.x.toFixed(1)},${codo.y.toFixed(1)} ${cursor.x},${cursor.y}" fill="none" stroke="${COLOR_CURSOR}" stroke-width="1.4" stroke-dasharray="3 2" pointer-events="none"/>`+
+       `<circle cx="${cursor.x}" cy="${cursor.y}" r="4.6" fill="#1a1f26" stroke="${COLOR_CURSOR}" stroke-width="2" pointer-events="none"/>`;
+  }
+  return s;
+}
+// Orificio del cursor de un potenciómetro colocado (null si no está en el protoboard)
+function cursorDe(k){
+  const c=st.res[k];
+  return (c && c.a && c.b && ModeloMontaje.tipoDe(c)==='POT') ? ModeloMontaje.cursorPotenciometro(c.a, c.b) : null;
+}
 // Color de cada canal del osciloscopio (CH1 amarillo, CH2 cian, …)
 function colorCanal(k){ return Osciloscopio.colorCanal(k); }   // el mismo color en el protoboard y en la pantalla
 // Dibujo de cualquier componente del mapa st.res entre dos puntos
-function componenteSVG(k, x1,y1,x2,y2){
+function componenteSVG(k, x1,y1,x2,y2, cursor){
   const c=st.res[k], tipo=ModeloMontaje.tipoDe(c);
+  if(tipo==='POT') return potenciometroAt(x1,y1,x2,y2,c.posicion,cursor);   // [incr. 10]
   if(tipo==='C') return capacitorAt(x1,y1,x2,y2);
   if(tipo==='L') return inductorAt(x1,y1,x2,y2);
   if(tipo==='VM') return medidorAt(x1,y1,x2,y2,'V');
@@ -3722,10 +3947,13 @@ function componenteSVG(k, x1,y1,x2,y2){
   if(tipo==='CH') return medidorAt(x1,y1,x2,y2,k.replace('CH',''), colorCanal(k));
   return resistorAt(x1,y1,x2,y2,c.bands);
 }
+// Posición del cursor como texto (0,5 → «50 %»)
+const textoPosicion = a => String(+(a*100).toFixed(1)).replace('.',',')+' %';
 // Valor del componente como texto (R: valor nominal del código de colores; medidores: su R)
 function valorComponente(k){
   const c=st.res[k], tipo=ModeloMontaje.tipoDe(c), T=ModeloMontaje.TIPOS[tipo];
   if(tipo==='R') return fmtOhm(nominal(c.bands));
+  if(tipo==='POT') return `${ModeloMontaje.formatoValor(c.valor,'Ω')} · ${textoPosicion(c.posicion)}`;   // [incr. 10]
   if(tipo==='GEN'){
     const g=c.forma, M=ModeloMontaje;
     return g.tipo==='dc' ? `DC ${M.formatoValor(g.dc,'V')}` : `${g.tipo} ${M.formatoValor(g.amplitud,'V')} ${M.formatoValor(g.frecuencia,'Hz')}`;
@@ -3761,15 +3989,23 @@ function actualizarMedidores(res){
 function mostrarAvisosMontaje(res){
   const caja=document.getElementById('avisosMontaje');
   if(!caja) return;
+  actualizarMedidores(res);     // incr. 5: lecturas en vivo de los medidores agregados
+  const avisos=avisosMontaje(res);
+  const html=(res.errores||[]).map(m=>`<div class="bad">✖ ${m}</div>`).join('')+avisos.map(m=>`<div class="warn">⚠ ${m}</div>`).join('');
+  if(html!==textoAvisosMontaje){ caja.innerHTML=html; textoAvisosMontaje=html; }
+}
+// Avisos del montaje actual (diagnóstico de ModeloMontaje + avisos del motor); se prueba en el incr. 10
+function avisosMontaje(res){
   const red=buildNet(false), colocados=[];
   for(const k in st.res){
     const c=st.res[k];
-    if(c.a && c.b) colocados.push({id:k, tipo:ModeloMontaje.tipoDe(c), n1:nodeOf(c.a), n2:nodeOf(c.b), ha:holeName(c.a), hb:holeName(c.b)});
+    if(!(c.a && c.b)) continue;
+    const item={id:k, tipo:ModeloMontaje.tipoDe(c), n1:nodeOf(c.a), n2:nodeOf(c.b), ha:holeName(c.a), hb:holeName(c.b)};
+    const hc=cursorDe(k);                                   // [incr. 10] potenciómetro: tercer terminal
+    if(hc) Object.assign(item, {n3:nodeOf(hc), hc:holeName(hc)});
+    colocados.push(item);
   }
-  actualizarMedidores(res);     // incr. 5: lecturas en vivo de los medidores agregados
-  const avisos=ModeloMontaje.diagnostico(red.els, red.srcs, red.reac, colocados).concat(res.avisos||[]);
-  const html=(res.errores||[]).map(m=>`<div class="bad">✖ ${m}</div>`).join('')+avisos.map(m=>`<div class="warn">⚠ ${m}</div>`).join('');
-  if(html!==textoAvisosMontaje){ caja.innerHTML=html; textoAvisosMontaje=html; }
+  return ModeloMontaje.diagnostico(red.els, red.srcs, red.reac, colocados).concat(res.avisos||[]);
 }
 </script>
 
@@ -3899,6 +4135,7 @@ function buildNet(ohmMode){
     if(!(r.a && r.b)) continue;
     const tipo=ModeloMontaje.tipoDe(r);   // [incr. 4] st.res guarda R, C y L
     if(tipo==='R') els.push([nodeOf(r.a), nodeOf(r.b), Rval(k), 'R:'+k]);
+    else if(tipo==='POT'){ const c=cursorDe(k); if(c) reac.push(ModeloMontaje.elementoMotor(k, r, nodeOf(r.a), nodeOf(r.b), nodeOf(c))); }   // [incr. 10] R_AC y R_CB
     else reac.push(ModeloMontaje.elementoMotor(k, r, nodeOf(r.a), nodeOf(r.b)));   // [incr. 5] C, L o medidor
   }
   st.srcs.forEach(s=>{
@@ -3987,7 +4224,7 @@ const occ = () => {                 // orificios ocupados
   const s=new Set();
   st.wires.forEach(w=>{ if(!PT[w.a]||!PT[w.b]) return;
     if(PT[w.a].kind==='hole')s.add(w.a); if(PT[w.b].kind==='hole')s.add(w.b); });
-  for(const k in st.res){ const r=st.res[k]; if(r.a){s.add(r.a);s.add(r.b);} }
+  for(const k in st.res){ const r=st.res[k]; if(r.a){s.add(r.a);s.add(r.b);} const c=cursorDe(k); if(c) s.add(c); }   // [incr. 10] cursor
   return s;
 };
 function drawBoard(){
@@ -4118,9 +4355,11 @@ function drawRes(){
     const r=st.res[k];
     if(!r.a||!r.b||!PT[r.a]||!PT[r.b]) continue;
     const a=PT[r.a], b=PT[r.b];
-    s+=`<g data-res="${k}" class="resbody" filter="url(#softsh)">${componenteSVG(k,a.x,a.y,b.x,b.y)}</g>`;   // [incr. 4] R, C o L
+    const hc=cursorDe(k);                                   // [incr. 10] potenciómetro
+    s+=`<g data-res="${k}" class="resbody" filter="url(#softsh)">${componenteSVG(k,a.x,a.y,b.x,b.y, hc ? PT[hc] : null)}</g>`;   // [incr. 4] R, C o L
     const mx=(a.x+b.x)/2, my=(a.y+b.y)/2, vert=Math.abs(b.y-a.y)>Math.abs(b.x-a.x);
-    s+=`<text class="lbl" x="${vert?mx+22:mx}" y="${vert?my:my-14}" text-anchor="${vert?'start':'middle'}" fill="#2a2f35">${etiquetaComponente(k)}</text>`;   // [incr. 5] con lectura en los medidores
+    const dy=hc ? 26 : 14;                                  // [incr. 10] sobre la flecha del cursor
+    s+=`<text class="lbl" x="${vert?mx+22:mx}" y="${vert?my:my-dy}" text-anchor="${vert?'start':'middle'}" fill="#2a2f35">${etiquetaComponente(k)}</text>`;   // [incr. 5] con lectura en los medidores
   }
   L('lRes').innerHTML=s;
 }
@@ -4167,8 +4406,9 @@ function drawOver(){
   }
   if(drag && drag.kind==='res' && drag.target){
     const [ha,hb]=drag.target;
-    s+=`<g class="ghost">${componenteSVG(drag.id,PT[ha].x,PT[ha].y,PT[hb].x,PT[hb].y)}</g>`;   // [incr. 4]
-    [ha,hb].forEach(h=>s+=`<circle cx="${PT[h].x}" cy="${PT[h].y}" r="7" fill="none" stroke="#3fbf6f" stroke-width="2"/>`);
+    const hc=ModeloMontaje.tipoDe(st.res[drag.id])==='POT' ? ModeloMontaje.cursorPotenciometro(ha, hb) : null;   // [incr. 10]
+    s+=`<g class="ghost">${componenteSVG(drag.id,PT[ha].x,PT[ha].y,PT[hb].x,PT[hb].y, hc ? PT[hc] : null)}</g>`;   // [incr. 4]
+    [ha,hb].concat(hc ? [hc] : []).forEach(h=>s+=`<circle cx="${PT[h].x}" cy="${PT[h].y}" r="7" fill="none" stroke="#3fbf6f" stroke-width="2"/>`);
   }else if(drag && drag.kind==='res'){
     s+=`<g class="ghost">${componenteSVG(drag.id,mouse.x-59,mouse.y,mouse.x+59,mouse.y)}</g>`;   // [incr. 4]
   }
@@ -4297,6 +4537,14 @@ function renderAnalysis(res){
       h+=`<div><span class="l">${k}</span> ${valorComponente(k)} · valor medio ${f(ModeloMontaje.mediaForma(g),'V',3)} · I media entregada=${f(I*1000,'mA',3)}</div>`;
       continue;
     }
+    if(tipo==='POT'){                   // [incr. 10] potenciómetro: los dos segmentos
+      const sg=ModeloMontaje.segmentosPot(r), Iac=res.I(k+':ac'), Icb=res.I(k+':cb');
+      const P=Iac*Iac*sg.ac+Icb*Icb*sg.cb;
+      h+=`<div><span class="l">${k}</span> ${valorComponente(k)} · R_AC=${f(sg.ac,'Ω',1)} · R_CB=${f(sg.cb,'Ω',1)} · `
+        +`I_AC=${f(Iac*1000,'mA',3)} · I_CB=${f(Icb*1000,'mA',3)} · P=${f(P*1000,'mW',2)}`
+        +(P>ModeloMontaje.POTENCIA_NOMINAL_POT?` <span class="bad">▲ >${String(ModeloMontaje.POTENCIA_NOMINAL_POT).replace('.',',')} W</span>`:'')+`</div>`;
+      continue;
+    }
     if(ModeloMontaje.esMedidor(r)){     // [incr. 5] medidor: su lectura y la potencia que consume
       const I=res.I(k), P=I*I*r.valor;
       h+=`<div><span class="l">${k}</span> ${valorComponente(k)} · lectura ${ModeloMontaje.textoLectura(r, I)} · P=${f(P*1000,'mW',4)}</div>`;
@@ -4341,10 +4589,10 @@ function nearestHole(x,y,filter){
   }
   return bd<40?best:null;
 }
-function pairFor(hid){
+function pairFor(hid, orientacion){
   const m=hid.match(/^([TB])(\d+)([A-J])$/);
   const sp=parseInt(L('span').value,10);
-  if(L('orient').value==='v'){
+  if((orientacion||L('orient').value)==='v'){
     let col;
     if(m) col=parseInt(m[2],10);
     else { const r=hid.match(/^R[TB][PN](\d+)$/); if(!r) return null; col=parseInt(r[1],10); }
@@ -4367,6 +4615,11 @@ function placeRes(k,ha,hb){
   if(!PT[ha]||!PT[hb]) return msg('Posición no válida');
   if(PT[ha].node===PT[hb].node) return msg('Los dos extremos caerían en el mismo nodo');
   for(const h of [ha,hb]) if(used.has(h) && !(r.a===h||r.b===h)) return msg('Ese orificio ya está ocupado');
+  if(ModeloMontaje.tipoDe(r)==='POT'){                       // [incr. 10] tercer terminal: el cursor
+    const hc=ModeloMontaje.cursorPotenciometro(ha, hb);
+    if(!hc) return msg('El potenciómetro va en una franja (filas A–J), con una columna libre para el cursor');
+    if(used.has(hc)) return msg(`El orificio del cursor (${holeName(hc)}) ya está ocupado`);
+  }
   r.a=ha; r.b=hb; redraw();
 }
 function pointAt(x,y){
@@ -4422,7 +4675,8 @@ function move(e){
   if(drag&&drag.kind==='res'){
     e.preventDefault();
     const h=nearestHole(q.x,q.y);
-    drag.target = h ? pairFor(h) : null;
+    const esPot=ModeloMontaje.tipoDe(st.res[drag.id])==='POT';   // [incr. 10] sus tres patas van en una franja
+    drag.target = h ? pairFor(h, esPot ? 'h' : null) : null;
     if(drag.target&&(!PT[drag.target[0]]||!PT[drag.target[1]])) drag.target=null;
     drawOver(); return;
   }
@@ -4553,7 +4807,8 @@ function updateRLabels(){
   for(const k in st.res){
     const r=st.res[k], e=L('rv_'+k), l=L('rl_'+k);
     if(e) e.textContent = ModeloMontaje.tipoDe(r)==='R' ? fmtOhm(nominal(r.bands))+' ±'+tolPct(r.bands)+'%' : valorComponente(k);   // [incr. 4]
-    if(l) l.textContent = r.a ? `en ${holeName(r.a)} – ${holeName(r.b)}` : 'en la bandeja';
+    const hc=cursorDe(k);   // [incr. 10]
+    if(l) l.textContent = r.a ? `en ${holeName(r.a)} – ${holeName(r.b)}`+(hc ? ` · cursor en ${holeName(hc)} (columna ${hc.match(/\d+/)[0]})` : '') : 'en la bandeja';
   }
 }
 function randomizeR(k){
@@ -4723,6 +4978,7 @@ function buildCompPanel(){
         <select data-cpf="${k}">${ops}</select><span class="u">${T.unidad}</span>${e12}
       </div>
       ${c.tipo==='GEN' ? camposGenerador(k, c.forma) : ''}
+      ${c.tipo==='POT' ? camposPotenciometro(k, c) : ''}
       <div class="cmsg" id="cmsg_${k}"></div>
       <div class="loc" id="rl_${k}"></div>
     </div>`;
@@ -4743,6 +4999,12 @@ function buildCompPanel(){
     const k=b.dataset.ce12; if(aplicar(k, ModeloMontaje.e12Cercano(st.res[k].valor))) buildCompPanel();
   });
   L('cpanel').querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>{ delete st.res[b.dataset.cdel]; buildCompPanel(); redraw(); PanelOsciloscopio.construirControles(); });
+  // [incr. 10] cursor del potenciómetro: como el deslizador de las fuentes, NO reconstruye el panel
+  L('cpanel').querySelectorAll('[data-potr]').forEach(r=>r.oninput=()=>fijarPosicionPot(r.dataset.potr, parseFloat(r.value)/100, r));
+  L('cpanel').querySelectorAll('[data-potn]').forEach(n=>{
+    n.oninput=()=>{ const v=parseFloat(n.value); if(Number.isFinite(v) && v>=0 && v<=100) fijarPosicionPot(n.dataset.potn, v/100, n); };
+    n.onchange=()=>{ const k=n.dataset.potn, v=parseFloat(n.value); fijarPosicionPot(k, Number.isFinite(v) ? v/100 : st.res[k].posicion); n.value=+(st.res[k].posicion*100).toFixed(1); };
+  });
   // generador: cualquier cambio de la forma de onda se valida antes de aplicarse
   L('cpanel').querySelectorAll('[data-gen]').forEach(el=>el.onchange=()=>{
     const k=el.dataset.gen, q=campo=>L('cpanel').querySelector(`[data-gen="${k}"][data-g="${campo}"]`);
@@ -4772,6 +5034,29 @@ function camposGenerador(k, g){
     (dc ? `<input type="hidden" data-gen="${k}" data-g="amplitud" value="${g.amplitud}"><input type="hidden" data-gen="${k}" data-g="frecuencia" value="${g.frecuencia}">`+
           `<input type="hidden" data-gen="${k}" data-g="fpf" value="">` : '')+`</div>`;
 }
+// [incr. 10] Control del cursor de un potenciómetro: deslizador (0,5 %), número exacto (0,1 %) y los dos segmentos
+const PASO_CURSOR_PCT = 0.5;
+function camposPotenciometro(k, c){
+  const pct=+(c.posicion*100).toFixed(1);
+  return `<div class="cval potcur"><span class="u">cursor</span>
+      <input type="range" min="0" max="100" step="${PASO_CURSOR_PCT}" value="${pct}" data-potr="${k}" aria-label="Posición del cursor de ${k}">
+      <input type="number" min="0" max="100" step="0.1" value="${pct}" data-potn="${k}" aria-label="Posición del cursor de ${k} en %"><span class="u">%</span></div>
+    <div class="e12" id="potseg_${k}">${textoSegmentos(c)}</div>`;
+}
+function textoSegmentos(c){
+  const sg=ModeloMontaje.segmentosPot(c), f=x=>ModeloMontaje.formatoValor(x,'Ω',4);
+  return `R<sub>AC</sub> = ${f(sg.ac)} · R<sub>CB</sub> = ${f(sg.cb)} · R<sub>AB</sub> = ${f(c.valor)}`;
+}
+// Fija la posición (0–1) del cursor de k y sincroniza sus controles, salvo `origen`
+function fijarPosicionPot(k, x, origen){
+  const c=st.res[k]; if(!c || !Number.isFinite(x)) return;
+  c.posicion=Math.round(Math.min(1, Math.max(0, x))*1000)/1000;     // resolución de 0,1 %
+  const r=L('cpanel').querySelector(`[data-potr="${k}"]`), n=L('cpanel').querySelector(`[data-potn="${k}"]`), sg=L('potseg_'+k);
+  if(r && r!==origen) r.value=c.posicion*100;
+  if(n && n!==origen) n.value=+(c.posicion*100).toFixed(1);
+  if(sg) sg.innerHTML=textoSegmentos(c);
+  redraw();
+}
 // Agrega un componente y muestra la página de la bandeja donde quedó
 function agregarComponente(tipo){
   const id = tipo==='R' ? ModeloMontaje.crearResistencia(st.res, rnd()) : ModeloMontaje.crearComponente(st.res, tipo);
@@ -4785,6 +5070,7 @@ function agregarComponente(tipo){
 L('addR').onclick=()=>agregarComponente('R');
 L('addC').onclick=()=>agregarComponente('C');
 L('addL').onclick=()=>agregarComponente('L');
+L('addPOT').onclick=()=>agregarComponente('POT');   // [incr. 10]
 L('addVM').onclick=()=>agregarComponente('VM');
 L('addAM').onclick=()=>agregarComponente('AM');
 L('addGEN').onclick=()=>agregarComponente('GEN');
@@ -4814,6 +5100,15 @@ L('cargarEjemplo').onclick=()=>cargarEjemplo(L('ejemploProtocolo').value);
 L('ejemploOscRC').onclick=()=>cargarEjemplo('P1a');
 L('ejemploOscFiltro').onclick=()=>cargarEjemplo('P4a');
 L('ejemploP5').onclick=()=>cargarEjemplo('P5');
+// [incr. 10] ejemplos del potenciómetro (fuera del protocolo P1–P5)
+function cargarEjemploPot(id){
+  const E=ModeloMontaje.construirEjemploPot(st, id);
+  buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw(); PanelOsciloscopio.construirControles();
+  if(typeof PanelBarrido!=='undefined') PanelBarrido.prepararPotenciometro();
+  msg(E.titulo);
+}
+L('ejemploPotDivisor').onclick=()=>cargarEjemploPot('divisor');
+L('ejemploPotMaxima').onclick=()=>cargarEjemploPot('maxima');
 buildCompPanel();
 </script>
 
@@ -5129,28 +5424,40 @@ const PanelValidacion = (function(){
 <script id="ui-barrido">
 "use strict";
 /* ====================================================================
-   AMPLIACIÓN · (h) FUENTE VARIABLE: BARRIDO DE TENSIÓN (incremento 9)
-   Interfaz del barrido. Usa las mismas funciones del simulador que las
-   lecturas en vivo (solveDC, connected, lecturaMedidor): el barrido mide
-   exactamente lo que mostrarían los instrumentos con la fuente en cada
-   valor. La lógica (valores, ajuste, CSV y gráfica) está en
-   BarridoTension, código puro. La fuente vuelve a su tensión y estado
-   al terminar, aunque el barrido falle.
+   AMPLIACIÓN · (h) BARRIDOS: FUENTE VARIABLE (incr. 9) Y CURSOR DE UN
+   POTENCIÓMETRO (incr. 10)
+   Interfaz de los barridos. Usa las mismas funciones del simulador que
+   las lecturas en vivo (solveDC, connected, lecturaMedidor): el barrido
+   mide exactamente lo que mostrarían los instrumentos en cada valor. La
+   lógica (valores, ajuste, análisis del potenciómetro, CSV y gráfica)
+   está en BarridoTension, código puro. La fuente o el cursor vuelven a
+   su valor al terminar, aunque el barrido falle.
    ==================================================================== */
 const PanelBarrido = (function(){
   const B=BarridoTension, M=ModeloMontaje;
-  const cfg=Object.assign({}, B.DEFECTO, {eje:null});
+  const cfg=Object.assign({}, B.DEFECTO, {pot:null, eje:null});
   // S · si la fuente ve más de 100 MΩ (más que cualquier medidor del banco, de 10 MΩ) está al aire:
   // lo que entrega es solo la fuga de 1 nS por nodo del modelo (≈ 1,5 GΩ con la fuente sin conectar)
   const G_ABIERTO = 1e-8;
   let ultimo=null;
   const fmt=(x,u,c)=>M.formatoValor(x,u,c||4);
+  const pct=x=>String(+x.toFixed(2)).replace('.',',')+' %';
   const estado=html=>{ L('barEstado').innerHTML=html; };
+  const potsColocados=()=>Object.keys(st.res).filter(k=>M.tipoDe(st.res[k])==='POT' && cursorDe(k));
 
   /* ---------- medición sobre el montaje ---------- */
   // Magnitudes que se pueden leer en el montaje actual, en el orden de la tabla
-  function magnitudes(i){
-    const lista=[{clave:'IF', nombre:`I entregada por F${i+1}`, unidad:'A', registro:`F${i+1}`, propia:true}];
+  function magnitudes(p){
+    const lista=[];
+    if(p.variable==='cursor'){
+      const k=p.pot;                                   // [incr. 10] los dos segmentos del potenciómetro
+      lista.push({clave:'PR_AC', nombre:`R_AC de ${k}`, unidad:'Ω', registro:k},
+                 {clave:'PV_AC', nombre:`V_AC de ${k}`, unidad:'V', registro:k},
+                 {clave:'PV_CB', nombre:`V_CB de ${k}`, unidad:'V', registro:k},
+                 {clave:'PI_AC', nombre:`I_AC de ${k}`, unidad:'A', registro:k},
+                 {clave:'PI_CB', nombre:`I_CB de ${k}`, unidad:'A', registro:k},
+                 {clave:'PP',    nombre:`P en ${k}`,    unidad:'W', registro:k});
+    }else lista.push({clave:'IF', nombre:`I entregada por F${p.fuente+1}`, unidad:'A', registro:`F${p.fuente+1}`, propia:true});
     if(connected('V')) lista.push({clave:'MV', nombre:'Voltímetro del banco', unidad:'V', registro:'Voltímetro'});
     if(connected('A')) lista.push({clave:'MA', nombre:'Amperímetro del banco', unidad:'A', registro:'Amperímetro'});
     Object.keys(st.res).forEach(k=>{
@@ -5159,38 +5466,59 @@ const PanelBarrido = (function(){
     });
     return lista;
   }
-  // medir(V) para BarridoTension: lecturas con la fuente i en V voltios (sin el ruido de los LCD del banco)
-  function medirCon(i, mags){
-    return V=>{
-      st.srcs[i].V=V;
+  // medir(x) para BarridoTension: lecturas con la fuente en x voltios o el cursor en x % (sin el ruido de los LCD del banco)
+  function medirCon(p, mags){
+    const cursor=p.variable==='cursor', c=cursor ? st.res[p.pot] : null;
+    const nodos=cursor ? {A:nodeOf(c.a), B:nodeOf(c.b), C:nodeOf(cursorDe(p.pot))} : null;
+    return x=>{
+      if(cursor) c.posicion=x/100; else st.srcs[p.fuente].V=x;
       const r=solveDC();
       if(!r.ok) return {ok:false, error:(r.errores||[])[0]||''};
-      const y={};
+      const sg=cursor ? M.segmentosPot(c) : null, y={};
       mags.forEach(m=>{
-        if(m.clave==='IF') y.IF=-(r.srcI[i]||0);                  // el motor da i < 0 en una fuente que entrega
-        else if(m.clave==='MV') y.MV=r.V('MVr')-r.V('MVb');
-        else if(m.clave==='MA') y.MA=(r.V('MAr')-r.V('MAb'))/BURDEN;
-        else y[m.clave]=M.lecturaMedidor(st.res[m.clave], r.I(m.clave));
+        switch(m.clave){
+          case 'IF':    y.IF=-(r.srcI[p.fuente]||0); break;          // el motor da i < 0 en una fuente que entrega
+          case 'MV':    y.MV=r.V('MVr')-r.V('MVb'); break;
+          case 'MA':    y.MA=(r.V('MAr')-r.V('MAb'))/BURDEN; break;
+          case 'PR_AC': y.PR_AC=sg.ac; break;
+          case 'PV_AC': y.PV_AC=r.V(nodos.A)-r.V(nodos.C); break;
+          case 'PV_CB': y.PV_CB=r.V(nodos.C)-r.V(nodos.B); break;
+          case 'PI_AC': y.PI_AC=r.I(p.pot+':ac'); break;              // de A al cursor
+          case 'PI_CB': y.PI_CB=r.I(p.pot+':cb'); break;              // del cursor a B
+          case 'PP':  { const ia=r.I(p.pot+':ac'), ib=r.I(p.pot+':cb'); y.PP=ia*ia*sg.ac+ib*ib*sg.cb; break; }
+          default:      y[m.clave]=M.lecturaMedidor(st.res[m.clave], r.I(m.clave));
+        }
       });
       return {ok:true, y};
     };
   }
-  // Barrido sobre el montaje actual; la fuente vuelve a su tensión y estado pase lo que pase
+  // Barrido sobre el montaje actual; la fuente (o el cursor) vuelve a su valor pase lo que pase
   function barrer(p){
+    if(p.variable==='cursor'){
+      const c=st.res[p.pot];
+      if(!c || M.tipoDe(c)!=='POT' || !cursorDe(p.pot)) return {ok:false, error:`${p.pot||'El potenciómetro'} no está colocado en el protoboard.`, filas:[]};
+      const antes=c.posicion, mags=magnitudes(p);
+      try{ return B.ejecutar(p, mags, medirCon(p, mags)); }
+      finally{ c.posicion=antes; }
+    }
     const s=st.srcs[p.fuente];
     if(!s) return {ok:false, error:'La fuente elegida no existe.', filas:[]};
-    const antes={V:s.V, on:s.on}, mags=magnitudes(p.fuente);
-    try{ s.on=true; return B.ejecutar(p, mags, medirCon(p.fuente, mags)); }
+    const antes={V:s.V, on:s.on}, mags=magnitudes(p);
+    try{ s.on=true; return B.ejecutar(p, mags, medirCon(p, mags)); }
     finally{ s.V=antes.V; s.on=antes.on; }
   }
 
   /* ---------- controles ---------- */
   function construirControles(){
+    const cur=cfg.variable==='cursor', V=B.VARIABLES[cfg.variable], u=V.unidad;
     const num=(id, valor, min, max, paso, ancho)=>`<input type="number" id="${id}" value="${valor}" min="${min}" max="${max}" step="${paso}" style="width:${ancho}px">`;
     L('barCtrls').innerHTML=
-      `<div class="grp"><label for="barF">Fuente variable</label><select id="barF">${st.srcs.map(s=>`<option value="${s.i}"${s.i===cfg.fuente?' selected':''}>Fuente ${s.i+1}</option>`).join('')}</select></div>`+
-      `<div class="grp"><label for="barV0">V inicial</label><div class="vf">${num('barV0', cfg.v0, B.V_MIN, B.V_MAX, 'any', 74)}<span class="u">V</span></div></div>`+
-      `<div class="grp"><label for="barV1">V final</label><div class="vf">${num('barV1', cfg.v1, B.V_MIN, B.V_MAX, 'any', 74)}<span class="u">V</span></div></div>`+
+      `<div class="grp"><label for="barVar">Variable</label><select id="barVar">
+         <option value="tension"${cur?'':' selected'}>tensión de una fuente</option>
+         <option value="cursor"${cur?' selected':''}>cursor de un potenciómetro</option></select></div>`+
+      `<div class="grp"><label for="barElem">${cur ? 'Potenciómetro' : 'Fuente variable'}</label><select id="barElem"></select></div>`+
+      `<div class="grp"><label for="barV0">${cur ? 'Cursor inicial' : 'V inicial'}</label><div class="vf">${num('barV0', cfg.v0, V.min, V.max, 'any', 74)}<span class="u">${u}</span></div></div>`+
+      `<div class="grp"><label for="barV1">${cur ? 'Cursor final' : 'V final'}</label><div class="vf">${num('barV1', cfg.v1, V.min, V.max, 'any', 74)}<span class="u">${u}</span></div></div>`+
       `<div class="grp"><label for="barN">Puntos</label><div class="vf">${num('barN', cfg.n, B.PUNTOS_MIN, B.PUNTOS_MAX, 1, 64)}<span class="u" id="barPaso"></span></div></div>`+
       `<div class="grp"><label for="barEje">Eje y de la gráfica</label><select id="barEje"><option value="">—</option></select></div>`+
       `<div class="grp"><label>&nbsp;</label><div class="btnrow">
@@ -5198,8 +5526,11 @@ const PanelBarrido = (function(){
          <button class="mini" id="barCsv">CSV</button>
          <button class="mini" id="barSvg">Capturar SVG</button>
          <button class="mini" id="barLog">Anotar ajustes</button></div></div>`;
+    llenarElementos();
     ['barV0','barV1','barN'].forEach(id=>L(id).addEventListener('input', ()=>{ leer(); mostrarPaso(); }));
-    L('barF').onchange=leer;
+    L('barVar').onchange=()=>cambiarVariable(L('barVar').value);
+    L('barElem').onchange=leer;
+    L('barElem').onfocus=llenarElementos;              // los potenciómetros cambian al armar el montaje
     L('barEje').onchange=()=>{ cfg.eje=L('barEje').value; dibujar(); };
     L('barRun').onclick=ejecutar;
     L('barCsv').onclick=exportarCSV;
@@ -5207,20 +5538,45 @@ const PanelBarrido = (function(){
     L('barLog').onclick=anotar;
     mostrarPaso(); llenarEje();
   }
+  function llenarElementos(){
+    const sel=L('barElem');
+    if(cfg.variable==='cursor'){
+      const pots=potsColocados();
+      if(!pots.includes(cfg.pot)) cfg.pot=pots[0]||null;
+      sel.innerHTML=pots.length ? pots.map(k=>`<option value="${k}"${k===cfg.pot?' selected':''}>${k} · ${fmt(st.res[k].valor,'Ω')}</option>`).join('')
+                                : '<option value="">(no hay potenciómetros colocados)</option>';
+    }else sel.innerHTML=st.srcs.map(s=>`<option value="${s.i}"${s.i===cfg.fuente?' selected':''}>Fuente ${s.i+1}</option>`).join('');
+  }
+  function cambiarVariable(v){
+    cfg.variable=v; Object.assign(cfg, B.VARIABLES[v].defecto); cfg.eje=null;
+    construirControles();
+  }
+  // Prepara el barrido del cursor (al cargar un ejemplo del potenciómetro)
+  function prepararPotenciometro(){
+    cfg.variable='cursor'; Object.assign(cfg, B.VARIABLES.cursor.defecto); cfg.pot=potsColocados()[0]||null; cfg.eje=null;
+    construirControles();
+  }
   function leer(){
-    cfg.fuente=+L('barF').value; cfg.v0=parseFloat(L('barV0').value); cfg.v1=parseFloat(L('barV1').value); cfg.n=Number(L('barN').value);
+    if(cfg.variable==='cursor') cfg.pot=L('barElem').value||null; else cfg.fuente=+L('barElem').value;
+    cfg.v0=parseFloat(L('barV0').value); cfg.v1=parseFloat(L('barV1').value); cfg.n=Number(L('barN').value);
   }
   function mostrarPaso(){
-    const ok=!B.validar(cfg);
-    L('barPaso').textContent = ok ? `ΔV = ${fmt(Math.abs(cfg.v1-cfg.v0)/(cfg.n-1),'V')}` : '';
+    const ok=!B.validar(cfg), d=Math.abs(cfg.v1-cfg.v0)/(cfg.n-1);
+    L('barPaso').textContent = !ok ? '' : cfg.variable==='cursor' ? `Δ = ${pct(d)}` : `ΔV = ${fmt(d,'V')}`;
   }
   function llenarEje(){
     const sel=L('barEje');
     if(!ultimo){ sel.innerHTML='<option value="">—</option>'; return; }
     sel.innerHTML=ultimo.magnitudes.map(m=>`<option value="${m.clave}"${m.clave===cfg.eje?' selected':''}>${m.nombre} (${m.unidad})</option>`).join('');
   }
-  // Eje y por defecto: un amperímetro (curva I–V), si no la corriente de la fuente
+  // Eje y por defecto. Fuente: un amperímetro (curva I–V), si no la corriente de la fuente.
+  // Cursor: la potencia en un reóstato (máxima transferencia); en un divisor, un voltímetro o V_CB.
   function ejePorDefecto(res){
+    if(res.p.variable==='cursor'){
+      if(res.potenciometro && res.potenciometro.modo==='reostato') return 'PP';
+      const vm=res.magnitudes.find(m=>m.unidad==='V' && !m.clave.startsWith('P') && !res.ajustes[m.clave].constante);
+      return vm ? vm.clave : 'PV_CB';
+    }
     const am=res.magnitudes.find(m=>m.unidad==='A' && m.clave!=='IF' && !res.ajustes[m.clave].constante);
     return (am || res.magnitudes[0]).clave;
   }
@@ -5230,27 +5586,39 @@ const PanelBarrido = (function(){
     leer();
     const error=B.validar(cfg);
     if(error) return estado(`<span class="bad">✖ ${error}</span>`);
-    const s=st.srcs[cfg.fuente], estabaApagada=!s.on;
+    if(cfg.variable==='cursor' && !cfg.pot) return estado('<span class="bad">✖ Coloca un potenciómetro en el protoboard («+ Potenciómetro») o carga un ejemplo del potenciómetro.</span>');
+    const cur=cfg.variable==='cursor', s=cur ? null : st.srcs[cfg.fuente], estabaApagada=!cur && !s.on;
     const t0=performance.now();
     const res=barrer(cfg);
     const ms=performance.now()-t0;
     redraw();
-    if(!res.ok){ ultimo=null; llenarEje(); L('barGrafica').innerHTML=''; L('barAjustes').innerHTML=L('barTabla').innerHTML='<p class="empty">Sin barrido.</p>';
+    if(!res.ok){ ultimo=null; llenarEje(); L('barGrafica').innerHTML=''; L('barPotCaja').style.display='none';
+      L('barAjustes').innerHTML=L('barTabla').innerHTML='<p class="empty">Sin barrido.</p>';
       return estado(`<span class="bad">✖ ${res.error}</span>`); }
     ultimo=res;
     if(!res.magnitudes.some(m=>m.clave===cfg.eje)) cfg.eje=ejePorDefecto(res);
-    llenarEje(); dibujar(); tablas();
+    llenarEje(); dibujar(); tablas(); analisisPot();
     const avisos=[];
-    if(estabaApagada) avisos.push(`La fuente ${cfg.fuente+1} estaba apagada: se encendió solo durante el barrido.`);
-    const aIF=res.ajustes.IF;
-    if(aIF.constante || Math.abs(aIF.pendiente)<G_ABIERTO)
-      avisos.push(`La fuente ${cfg.fuente+1} ve un circuito abierto (R vista ${aIF.constante ? '∞' : '≈ '+fmt(1/Math.abs(aIF.pendiente),'Ω',2)}: `+
-        `solo la fuga de 1 nS por nodo del modelo). Revisa que esté conectada al circuito.`);
-    const exceso=res.filas.find(f=>Math.abs(f.y.IF)>IMAX);
-    if(exceso) avisos.push(`Desde ${fmt(exceso.V,'V')} la fuente entrega más de ${fmt(IMAX,'A')}: ¿hay un cortocircuito?`);
-    const noLineal=res.magnitudes.filter(m=>{ const a=res.ajustes[m.clave]; return !a.constante && 1-a.r2>1e-9; });
-    if(noLineal.length) avisos.push(`Respuesta no lineal en ${noLineal.map(m=>m.nombre).join(', ')} (R² < 1).`);
-    estado(`Barrido de la fuente ${cfg.fuente+1}: ${res.filas.length} puntos de ${fmt(cfg.v0,'V')} a ${fmt(cfg.v1,'V')} · ${res.magnitudes.length} magnitud${res.magnitudes.length>1?'es':''} · ${ms.toFixed(0)} ms`+
+    if(cur){
+      const pa=res.potenciometro;
+      if(pa && pa.modo==='sin corriente') avisos.push(`Por ${cfg.pot} no circula corriente: conecta al menos dos de sus terminales a un circuito con una fuente encendida.`);
+      if(pa && pa.modo==='reostato' && !pa.enRango) avisos.push(`R_th = ${fmt(pa.Rth,'Ω')} queda fuera del rango del potenciómetro: la potencia máxima está en un extremo del recorrido.`);
+      const pmax=Math.max(...res.filas.map(f=>f.y.PP));
+      if(pmax>M.POTENCIA_NOMINAL_POT) avisos.push(`${cfg.pot} llega a disipar ${fmt(pmax,'W')}: más que los ${String(M.POTENCIA_NOMINAL_POT).replace('.',',')} W de un potenciómetro típico.`);
+    }else{
+      if(estabaApagada) avisos.push(`La fuente ${cfg.fuente+1} estaba apagada: se encendió solo durante el barrido.`);
+      const aIF=res.ajustes.IF;
+      if(aIF.constante || Math.abs(aIF.pendiente)<G_ABIERTO)
+        avisos.push(`La fuente ${cfg.fuente+1} ve un circuito abierto (R vista ${aIF.constante ? '∞' : '≈ '+fmt(1/Math.abs(aIF.pendiente),'Ω',2)}: `+
+          `solo la fuga de 1 nS por nodo del modelo). Revisa que esté conectada al circuito.`);
+      const exceso=res.filas.find(f=>Math.abs(f.y.IF)>IMAX);
+      if(exceso) avisos.push(`Desde ${fmt(exceso.x,'V')} la fuente entrega más de ${fmt(IMAX,'A')}: ¿hay un cortocircuito?`);
+      const noLineal=res.magnitudes.filter(m=>{ const a=res.ajustes[m.clave]; return !a.constante && 1-a.r2>1e-9; });
+      if(noLineal.length) avisos.push(`Respuesta no lineal en ${noLineal.map(m=>m.nombre).join(', ')} (R² < 1).`);
+    }
+    const que=cur ? `del cursor de ${cfg.pot}: ${res.filas.length} puntos de ${pct(cfg.v0)} a ${pct(cfg.v1)}`
+                  : `de la fuente ${cfg.fuente+1}: ${res.filas.length} puntos de ${fmt(cfg.v0,'V')} a ${fmt(cfg.v1,'V')}`;
+    estado(`Barrido ${que} · ${res.magnitudes.length} magnitud${res.magnitudes.length>1?'es':''} · ${ms.toFixed(0)} ms`+
       avisos.map(a=>`<div class="warn">⚠ ${a}</div>`).join(''));
   }
   function dibujar(){
@@ -5258,25 +5626,63 @@ const PanelBarrido = (function(){
     L('barGrafica').innerHTML=B.graficaSVG(ultimo, cfg.eje);
   }
   function tablas(){
-    const r=ultimo;
+    const r=ultimo, cur=r.p.variable==='cursor';
     L('barAjustes').innerHTML=`<table class="cmp"><thead><tr><th>Magnitud</th><th style="text-align:right">Pendiente m</th><th style="text-align:right">Ordenada b</th>`+
       `<th style="text-align:right">R²</th><th>Lectura física</th></tr></thead><tbody>`+
       r.magnitudes.map(m=>{
-        const a=r.ajustes[m.clave], I=B.interpretar(m, a);
-        const pend = a.constante ? '0' : (m.unidad==='A' ? fmt(a.pendiente,'S',5) : String(+a.pendiente.toPrecision(6)).replace('.',','));
+        const a=r.ajustes[m.clave], I=B.interpretar(m, a, r.p.variable);
+        const pend = a.constante ? '0' : cur ? fmt(a.pendiente, m.unidad+'/%', 5)
+                   : (m.unidad==='A' ? fmt(a.pendiente,'S',5) : String(+a.pendiente.toPrecision(6)).replace('.',','));
         return `<tr><td>${m.nombre}</td><td class="n">${pend}</td><td class="n">${fmt(a.ordenada, m.unidad, 5)}</td>`+
           `<td class="n">${a.constante ? '—' : a.r2.toFixed(6).replace('.',',')}</td><td>${I.texto}</td></tr>`;
       }).join('')+`</tbody></table>`+
-      `<p class="hint">En una corriente la pendiente está en siemens (A/V). Para la corriente de la propia fuente (o un amperímetro en serie con ella), `+
-      `1/m es la resistencia equivalente que ve la fuente; en otra rama, 1/m es una transresistencia ΔV<sub>F</sub>/ΔI. `+
-      `La ordenada b es la lectura con la fuente en 0 V: el aporte de las demás fuentes encendidas.</p>`;
-    L('barTabla').innerHTML=`<table class="cmp"><thead><tr><th>V<sub>F${r.p.fuente+1}</sub></th>${r.magnitudes.map(m=>`<th>${m.nombre}</th>`).join('')}</tr></thead><tbody>`+
-      r.filas.map(f=>`<tr><td class="n">${fmt(f.V,'V',5)}</td>${r.magnitudes.map(m=>`<td class="n">${fmt(f.y[m.clave], m.unidad, 5)}</td>`).join('')}</tr>`).join('')+
+      (cur ? `<p class="hint">Con el cursor la recta es solo una referencia: R_AC cambia en línea recta con la posición, pero las corrientes y la potencia no.
+              Un R² menor que 1 en la salida de un divisor es el efecto de carga; la potencia en un reóstato tiene un máximo (ver el análisis).</p>`
+           : `<p class="hint">En una corriente la pendiente está en siemens (A/V). Para la corriente de la propia fuente (o un amperímetro en serie con ella), `+
+             `1/m es la resistencia equivalente que ve la fuente; en otra rama, 1/m es una transresistencia ΔV<sub>F</sub>/ΔI. `+
+             `La ordenada b es la lectura con la fuente en 0 V: el aporte de las demás fuentes encendidas.</p>`);
+    L('barTabla').innerHTML=`<table class="cmp"><thead><tr><th>${cur ? `cursor de ${r.p.pot}` : `V<sub>F${r.p.fuente+1}</sub>`}</th>${r.magnitudes.map(m=>`<th>${m.nombre}</th>`).join('')}</tr></thead><tbody>`+
+      r.filas.map(f=>`<tr><td class="n">${cur ? pct(f.x) : fmt(f.x,'V',5)}</td>${r.magnitudes.map(m=>`<td class="n">${fmt(f.y[m.clave], m.unidad, 5)}</td>`).join('')}</tr>`).join('')+
       `</tbody></table>`;
+  }
+  // [incr. 10] Análisis del potenciómetro: máxima transferencia (reóstato) o efecto de carga (divisor)
+  function textoAnalisis(r){
+    const pa=r.potenciometro, k=r.p.pot;
+    if(!pa) return '';
+    if(pa.modo==='sin corriente') return `<p class="empty">Por ${k} no circula corriente.</p>`;
+    const fila=(a,b,c)=>`<tr><td>${a}</td><td class="n">${b}</td><td>${c||''}</td></tr>`;
+    if(pa.modo==='reostato'){
+      const seg=pa.segmento==='AC' ? 'A y el cursor (R_L = R_AC)' : 'el cursor y B (R_L = R_CB)';
+      const eR=(pa.RLmedido-pa.Rth)/pa.Rth*100, eP=(pa.PmaxMedida-pa.PmaxTeorica)/pa.PmaxTeorica*100;
+      return `<p class="hint" style="margin-top:0">${k} trabaja como <b>reóstato</b> entre ${seg}: el resto del circuito es un equivalente de Thévenin.</p>
+        <table class="cmp"><tbody>
+        ${fila('Thévenin visto por la carga: v<sub>L</sub> = V<sub>th</sub> − R<sub>th</sub>·i<sub>L</sub> (recta por todos los puntos)', `V<sub>th</sub> = ${fmt(pa.Vth,'V',5)} · R<sub>th</sub> = ${fmt(pa.Rth,'Ω',5)}`, `R² = ${pa.r2Thevenin.toFixed(9).replace('.',',')}`)}
+        ${fila('Teoría: P<sub>L</sub> es máxima con R<sub>L</sub> = R<sub>th</sub>', `P<sub>máx</sub> = V<sub>th</sub>²/(4R<sub>th</sub>) = ${fmt(pa.PmaxTeorica,'W',5)}`,
+               Number.isFinite(pa.xOptimo) && pa.enRango ? `con el cursor en ${pct(pa.xOptimo)}` : 'fuera del recorrido del cursor')}
+        ${fila('Medido en el barrido (vértice de la parábola por los 3 puntos mayores)', `R<sub>L</sub> = ${fmt(pa.RLmedido,'Ω',5)} · P = ${fmt(pa.PmaxMedida,'W',5)}`,
+               pa.enRango ? `difiere ${String(+eR.toFixed(3)).replace('.',',')} % en R y ${String(+eP.toFixed(4)).replace('.',',')} % en P` : '')}
+        </tbody></table>
+        <p class="hint">Con R<sub>L</sub> &lt; R<sub>th</sub> la mayor parte de la potencia se pierde en R<sub>th</sub>; con R<sub>L</sub> &gt; R<sub>th</sub> la corriente cae.
+        En el máximo la carga recibe la mitad de la potencia que entrega la fuente equivalente (eficiencia del 50 %). La diferencia medida sale de la separación entre puntos: más puntos la reducen.</p>`;
+    }
+    return `<p class="hint" style="margin-top:0">${k} trabaja como <b>divisor de tensión</b> (los dos segmentos conducen).</p>
+      <table class="cmp"><tbody>
+      ${fila('Desviación máxima de v<sub>CB</sub>/v<sub>AB</sub> frente a un divisor sin carga, R<sub>CB</sub>/R', `${String(+pa.desvMaxPct.toPrecision(3)).replace('.',',')} % de v<sub>AB</sub>`, `con el cursor en ${pct(pa.xDesvMax)}`)}
+      ${fila('Corriente máxima que sale por el cursor hacia la carga', fmt(pa.corrienteCursorMax,'A',4), '')}
+      </tbody></table>
+      <p class="hint">${pa.sinCarga ? 'La salida es <b>proporcional a la posición</b>: lo que se conecta al cursor casi no toma corriente.'
+        : '<b>Efecto de carga:</b> lo conectado al cursor toma corriente y la salida ya no es proporcional a la posición. Se corrige con una carga mucho mayor que R (p. ej. un voltímetro de 10 MΩ) o con un potenciómetro de menor R.'}</p>`;
+  }
+  function analisisPot(){
+    const ver=!!(ultimo && ultimo.potenciometro);
+    L('barPotCaja').style.display=ver ? '' : 'none';
+    L('barPot').innerHTML=ver ? textoAnalisis(ultimo) : '';
   }
 
   /* ---------- exportar ---------- */
-  const nombreArchivo=ext=>`barrido_F${ultimo.p.fuente+1}_${ultimo.p.v0}-${ultimo.p.v1}V_${ultimo.p.n}puntos.${ext}`.replace(/\./g, (m, i, s)=>i===s.lastIndexOf('.') ? '.' : ',');
+  const nombreArchivo=ext=>(ultimo.p.variable==='cursor'
+      ? `barrido_${ultimo.p.pot}_${ultimo.p.v0}-${ultimo.p.v1}pct_${ultimo.p.n}puntos.${ext}`
+      : `barrido_F${ultimo.p.fuente+1}_${ultimo.p.v0}-${ultimo.p.v1}V_${ultimo.p.n}puntos.${ext}`).replace(/\./g, (m, i, s)=>i===s.lastIndexOf('.') ? '.' : ',');
   function exportarCSV(){
     if(!ultimo) return estado('<span class="warn">Primero ejecuta el barrido.</span>');
     download(nombreArchivo('csv'), B.csv(ultimo), 'text/csv;charset=utf-8');
@@ -5287,13 +5693,17 @@ const PanelBarrido = (function(){
   }
   function anotar(){
     if(!ultimo) return estado('<span class="warn">Primero ejecuta el barrido.</span>');
-    const hora=new Date().toLocaleTimeString('es-CO',{hour12:false}), p=ultimo.p;
-    ultimo.magnitudes.forEach(m=>{
-      const a=ultimo.ajustes[m.clave], I=B.interpretar(m, a);
-      st.log.push({t:hora, inst:m.registro, val:`barrido F${p.fuente+1} ${fmt(p.v0,'V')}–${fmt(p.v1,'V')}: ${I.texto.replace(/<\/?sub>/g,'')}`+(a.constante?'':` (R² ${a.r2.toFixed(6).replace('.',',')})`)});
+    const hora=new Date().toLocaleTimeString('es-CO',{hour12:false}), p=ultimo.p, cur=p.variable==='cursor', pa=ultimo.potenciometro;
+    const rango=cur ? `cursor de ${p.pot} ${pct(p.v0)}–${pct(p.v1)}` : `F${p.fuente+1} ${fmt(p.v0,'V')}–${fmt(p.v1,'V')}`;
+    let n=0;
+    if(cur && pa && pa.modo==='reostato'){ st.log.push({t:hora, inst:p.pot, val:`barrido ${rango}: R_th = ${fmt(pa.Rth,'Ω')}, P máx teórica ${fmt(pa.PmaxTeorica,'W')}; medido R_L = ${fmt(pa.RLmedido,'Ω')}, P = ${fmt(pa.PmaxMedida,'W')}`}); n++; }
+    if(cur && pa && pa.modo==='divisor'){ st.log.push({t:hora, inst:p.pot, val:`barrido ${rango}: desviación máx. del divisor ${String(+pa.desvMaxPct.toPrecision(3)).replace('.',',')} % de v_AB`}); n++; }
+    ultimo.magnitudes.filter(m=>!(cur && m.clave.startsWith('P'))).forEach(m=>{
+      const a=ultimo.ajustes[m.clave], I=B.interpretar(m, a, p.variable);
+      st.log.push({t:hora, inst:m.registro, val:`barrido ${rango}: ${I.texto.replace(/<\/?sub>/g,'')}`+(a.constante?'':` (R² ${a.r2.toFixed(6).replace('.',',')})`)}); n++;
     });
     renderLog();
-    msg(`${ultimo.magnitudes.length} ajuste${ultimo.magnitudes.length>1?'s':''} anotado${ultimo.magnitudes.length>1?'s':''} en el registro de medidas`);
+    msg(`${n} resultado${n>1?'s':''} anotado${n>1?'s':''} en el registro de medidas`);
   }
 
   /* ---------- pruebas (botón «Ejecutar pruebas del motor») ----------
@@ -5380,8 +5790,121 @@ const PanelBarrido = (function(){
     return filas;
   }
 
+  /* ---------- pruebas del potenciómetro (incr. 10) ----------
+     1) el modelo, con valores calculados a mano (orificio del cursor, segmentos, JSON);
+     2) en el protoboard, con las funciones reales del simulador:
+        · óhmetro: entre A y B siempre R; entre A y el cursor, R_AC;
+        · divisor: la salida frente a la teoría del montaje (r interna, 3 cables, R_in del voltímetro)
+          y el efecto de carga frente a la fórmula exacta (R_CB‖R_L)/(R_AC + R_CB‖R_L);
+        · máxima transferencia: V_th y R_th de la recta v_L–i_L frente a la teoría del montaje,
+          y la potencia máxima medida frente a V_th²/(4R_th);
+        · avisos, colocación y que el cursor vuelve a su posición.
+     Restaura el montaje del usuario al terminar. */
+  function pruebasPotenciometro(){
+    const filas=[], err=(x,t)=>Math.abs(x-t)/Math.abs(t)*100, pctTxt=x=>`< ${String(x).replace('.',',')} %`;
+    const fila=(prueba, obtenido, esperado, error, pasa, criterio)=>filas.push({prueba, obtenido, esperado, error, pasa, criterio:criterio||''});
+    const eps=M.RESIDUAL_POT, ae=a=>eps+(1-2*eps)*a;
+    const TOL_MONTAJE_PCT = 1e-3;   // % · frente a la teoría del montaje: solo la fuga de 1 nS por nodo
+    const TOL_FUGA_PCT = 1e-2;      // % · óhmetro y cocientes que acumulan varias fugas
+    const TOL_MAXIMO_R_PCT = 1;     // % · R_L del máximo medido: P(R_L) es muy plana cerca del máximo
+    const TOL_MAXIMO_P_PCT = 0.01;  // % · P_máx medida (vértice de la parábola) frente a V_th²/(4R_th)
+
+    // 1) modelo
+    const casos=[['T2C','T7C','T4C'],['T7C','T2C','T4C'],['B3H','B8H','B5H'],['T2C','T3C',null],['T7D','B7G',null],['RTP1','RTP6',null],['T2C','T7D',null]];
+    const bien=casos.filter(([a,b,e])=>M.cursorPotenciometro(a,b)===e).length;
+    fila('orificio del cursor: columna intermedia de la misma fila; ninguno en rieles, vertical, filas distintas o columnas vecinas', `${bien}/${casos.length}`, `${casos.length}/${casos.length}`, null, bien===casos.length);
+    const s3=M.segmentosPot({valor:10e3, posicion:0.3});
+    fila('R = 10 kΩ con el cursor en 30 %: R_AC = R·(ε + (1 − 2ε)·0,3) = 3 004 Ω y R_AC + R_CB = R', `${s3.ac} + ${s3.cb}`, '3004 + 6996', null,
+      Math.abs(s3.ac-3004)<1e-9 && Math.abs(s3.ac+s3.cb-10e3)<1e-9);
+    const s0=M.segmentosPot({valor:10e3, posicion:0}), s1=M.segmentosPot({valor:10e3, posicion:1});
+    fila('extremos: ningún segmento vale 0 Ω (residual ε = 0,1 % de R)', `${s0.ac} Ω y ${s1.cb} Ω`, '10 Ω y 10 Ω', null,
+      Math.abs(s0.ac-10)<1e-9 && Math.abs(s1.cb-10)<1e-9 && s0.cb>0 && s1.ac>0);
+    const em=M.elementoMotor('POT9', {tipo:'POT', valor:1e3, posicion:0.5}, 'a', 'b', 'c');
+    fila('elementoMotor: R_AC entre A y el cursor, R_CB entre el cursor y B', em.map(e=>`${e.id} ${e.n1}–${e.n2}`).join(' · '), 'POT9:ac a–c · POT9:cb c–b', null,
+      Array.isArray(em) && em.length===2 && em.every(e=>e.tipo==='R') && em[0].n1==='a' && em[0].n2==='c' && em[1].n1==='c' && em[1].n2==='b');
+    const d=JSON.parse(JSON.stringify(M.aJSON({wires:[], res:{POT1:{id:'POT1', tipo:'POT', valor:4.7e3, posicion:0.37, a:'T3C', b:'T8C'}}, srcs:[]})));
+    const st2={wires:[], res:{}, srcs:[]}, av2=M.desdeJSON(st2, d, ()=>true), p2=st2.res.POT1;
+    fila('JSON: guardar → cargar conserva R, posición del cursor y lugar', p2 ? `${p2.valor} Ω · ${p2.posicion} · ${p2.a}–${p2.b}` : 'no se cargó', '4700 Ω · 0.37 · T3C–T8C', null,
+      !av2.length && p2 && p2.valor===4.7e3 && p2.posicion===0.37 && p2.a==='T3C' && p2.b==='T8C');
+    const st3={wires:[], res:{}, srcs:[]};
+    const av3=M.desdeJSON(st3, {res:{POT1:{tipo:'POT', valor:1e3, posicion:1.5, a:null, b:null}, POT2:{tipo:'POT', valor:1e3, posicion:0.5, a:'T7D', b:'B7G'}}}, ()=>true);
+    fila('JSON: una posición fuera de 0–100 % no se carga; extremos sin lugar para el cursor → a la bandeja', `${av3.length} avisos`, '2 avisos', null,
+      av3.length===2 && !st3.res.POT1 && st3.res.POT2 && st3.res.POT2.a===null);
+
+    // 2) protoboard
+    const copia=JSON.stringify({wires:st.wires, wid:st.wid, ideal:st.ideal, res:st.res, srcs:st.srcs.map(s=>({V:s.V,on:s.on}))});
+    try{
+      // óhmetro (fuentes apagadas, sin cables ni voltímetro)
+      M.construirEjemploPot(st, 'divisor');
+      st.wires=[]; st.srcs.forEach(s=>{ s.on=false; });
+      Object.keys(st.res).forEach(k=>{ if(M.tipoDe(st.res[k])==='VM'){ st.res[k].a=null; st.res[k].b=null; } });
+      st.res.POT1.posicion=0.2;
+      const rAB=solveOhm('T3','T8'), rAC=solveOhm('T3','T5');
+      st.res.POT1.posicion=0.8;
+      const rAB2=solveOhm('T3','T8');
+      const eO=Math.max(err(rAB,10e3), err(rAB2,10e3), err(rAC,10e3*ae(0.2)));
+      fila('óhmetro: R_AB = 10 kΩ con el cursor en 20 % y en 80 %; R_AC = 2 006 Ω en 20 %', `${rAB.toFixed(2)} · ${rAB2.toFixed(2)} · ${rAC.toFixed(3)} Ω`, '10000 · 10000 · 2006 Ω',
+        eO, eO<TOL_FUGA_PCT, pctTxt(TOL_FUGA_PCT));
+
+      // divisor con el voltímetro de 10 MΩ: teoría del montaje
+      M.construirEjemploPot(st, 'divisor');
+      const vm=Object.keys(st.res).find(k=>M.tipoDe(st.res[k])==='VM');
+      const R=st.res.POT1.valor, V=12, Rs=RINT+3*RWIRE;
+      const salida=(x, RL)=>{ const a=ae(x/100), Rac=R*a, Rcb=R*(1-a), Rp=Rcb*RL/(Rcb+RL); return {v:V*Rp/(Rs+Rac+Rp), frac:Rp/(Rac+Rp), sin:Rcb/R}; };
+      const rd=barrer({variable:'cursor', pot:'POT1', v0:0, v1:100, n:11});
+      const eV=Math.max(...rd.filas.map(f=>Math.abs(f.y[vm]-salida(f.x, st.res[vm].valor).v)))/V*100;
+      fila(`divisor: ${vm} = 12 V·(R_CB‖R_in)/(r_int + 3 cables + R_AC + R_CB‖R_in) en los 11 puntos (error máx. / 12 V)`, eV, 0, eV, eV<TOL_MONTAJE_PCT, pctTxt(TOL_MONTAJE_PCT));
+      const pd=rd.potenciometro;
+      fila(`divisor con ${vm} de 10 MΩ: se reconoce como divisor sin carga (desviación < 0,1 % de v_AB)`, pd ? `${pd.modo} · ${pd.desvMaxPct.toPrecision(3)} %` : '—', 'divisor · < 0,1 %', null,
+        !!pd && pd.modo==='divisor' && pd.sinCarga);
+      st.res[vm].valor=10e3;                            // carga de 10 kΩ en el cursor
+      const rc=barrer({variable:'cursor', pot:'POT1', v0:0, v1:100, n:11}), pc=rc.potenciometro;
+      const desvT=Math.max(...rc.filas.map(f=>{ const o=salida(f.x, 10e3); return Math.abs(o.frac-o.sin)*100; }));
+      fila('divisor con 10 kΩ en el cursor: desviación máx. = máx |(R_CB‖R_L)/(R_AC + R_CB‖R_L) − R_CB/R|', pc.desvMaxPct, desvT, err(pc.desvMaxPct, desvT),
+        err(pc.desvMaxPct, desvT)<TOL_FUGA_PCT && !pc.sinCarga, pctTxt(TOL_FUGA_PCT));
+      fila(`divisor cargado: la salida ya no es lineal en la posición (1 − R² de ${vm} > 10⁻³)`, 1-rc.ajustes[vm].r2, 1e-3, null, 1-rc.ajustes[vm].r2>1e-3, '> 10⁻³');
+
+      // máxima transferencia de potencia
+      M.construirEjemploPot(st, 'maxima');
+      const vm2=Object.keys(st.res).find(k=>M.tipoDe(st.res[k])==='VM');
+      const rm=barrer({variable:'cursor', pot:'POT1', v0:0, v1:100, n:101}), pm=rm.potenciometro;
+      const Rin=st.res[vm2].valor, Rext=nominal(st.res.R1.bands)+RINT+3*RWIRE;
+      const RthT=Rext*Rin/(Rext+Rin), VthT=10*Rin/(Rext+Rin), PmaxT=VthT*VthT/(4*RthT), xT=(RthT/st.res.POT1.valor-eps)/(1-2*eps)*100;
+      fila('máxima transferencia: POT1 trabaja como reóstato entre A y el cursor (B libre)', pm ? `${pm.modo} ${pm.segmento}` : '—', 'reostato AC', null, !!pm && pm.modo==='reostato' && pm.segmento==='AC');
+      fila(`R_th de la recta v_L = V_th − R_th·i_L = (R1 + r_int + 3 cables) ‖ R_in de ${vm2}`, pm.Rth, RthT, err(pm.Rth, RthT), err(pm.Rth, RthT)<TOL_MONTAJE_PCT, pctTxt(TOL_MONTAJE_PCT));
+      fila('V_th de la misma recta = 10 V·R_in/(R1 + r_int + 3 cables + R_in)', pm.Vth, VthT, err(pm.Vth, VthT), err(pm.Vth, VthT)<TOL_MONTAJE_PCT, pctTxt(TOL_MONTAJE_PCT));
+      fila('P máxima medida (vértice de la parábola, 101 puntos) = V_th²/(4R_th)', pm.PmaxMedida, PmaxT, err(pm.PmaxMedida, PmaxT), err(pm.PmaxMedida, PmaxT)<TOL_MAXIMO_P_PCT, pctTxt(TOL_MAXIMO_P_PCT));
+      fila('R_L del máximo medido = R_th (teorema de máxima transferencia)', pm.RLmedido, RthT, err(pm.RLmedido, RthT), err(pm.RLmedido, RthT)<TOL_MAXIMO_R_PCT, pctTxt(TOL_MAXIMO_R_PCT));
+      fila('posición del cursor donde R_AC = R_th: (R_th/R − ε)/(1 − 2ε)', pm.xOptimo, xT, err(pm.xOptimo, xT), err(pm.xOptimo, xT)<TOL_MONTAJE_PCT, pctTxt(TOL_MONTAJE_PCT));
+      fila('el cursor vuelve a su posición después del barrido', st.res.POT1.posicion, 0.1, null, st.res.POT1.posicion===0.1);
+      const avR=avisosMontaje(solveDC()).filter(a=>a.startsWith('POT1'));
+      fila('avisos: usarlo como reóstato (A y cursor, B libre) no genera avisos', avR.join(' ')||'sin avisos', 'sin avisos', null, avR.length===0);
+      st.wires=st.wires.filter(w=>w.a!=='T9A' && w.b!=='T9A');      // se desconecta el cursor
+      const avU=avisosMontaje(solveDC()).filter(a=>a.startsWith('POT1'));
+      fila('avisos: con un solo terminal conectado se avisa', avU.join(' ')||'sin avisos', 'POT1: solo un terminal…', null, avU.length===1 && /solo un terminal/.test(avU[0]));
+
+      // colocación en el protoboard
+      clearBoard();
+      const k=M.crearComponente(st.res, 'POT');
+      placeRes(k, 'T7D', 'B7G'); const vertical=st.res[k].a===null;
+      st.wires.push({id:'w990', a:'S0p', b:'T4C', color:'rojo'});
+      placeRes(k, 'T2C', 'T7C'); const ocupado=st.res[k].a===null;
+      st.wires=[]; placeRes(k, 'T2C', 'T7C'); const libre=st.res[k].a==='T2C' && cursorDe(k)==='T4C';
+      fila('colocación: vertical se rechaza; con el orificio del cursor ocupado se rechaza; libre queda con el cursor en C4',
+        `${vertical} · ${ocupado} · ${libre}`, 'true · true · true', null, vertical && ocupado && libre);
+    }catch(ex){
+      fila('las pruebas del potenciómetro en el protoboard terminaron sin errores', String(ex && ex.message || ex), 'sin errores', null, false);
+    }finally{
+      const dd=JSON.parse(copia);
+      st.wires=dd.wires; st.wid=dd.wid; st.ideal=dd.ideal; st.res=dd.res;
+      dd.srcs.forEach((s,i)=>Object.assign(st.srcs[i], s));
+      buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw(); PanelOsciloscopio.construirControles();
+    }
+    return filas;
+  }
+
   construirControles();
-  return Object.freeze({ ejecutar, barrer, magnitudes, pruebas, construirControles, ultimo:()=>ultimo });
+  return Object.freeze({ ejecutar, barrer, magnitudes, pruebas, pruebasPotenciometro, construirControles, prepararPotenciometro, ultimo:()=>ultimo });
 })();
 </script>
 
@@ -5893,6 +6416,7 @@ const BancoTransitorios = (function(){
       const osc=pruebaOscEnProtoboard();
       const ida=pruebaIdaVueltaEnProtoboard();
       const bar=PanelBarrido.pruebas();        // [incr. 9] fuente variable: barrido de tensión
+      const pot=PanelBarrido.pruebasPotenciometro();   // [incr. 10] potenciómetro
       const ms=performance.now()-t0;
       const pasanReg=reg.filter(f=>f.pasa).length;
       let h=`<div class="caja"><h3>Pruebas del motor: ${R.pasan}/${R.total} cumplen · regresión de los ejemplos del base: ${pasanReg}/${reg.length} · ${ms.toFixed(0)} ms</h3>
@@ -5923,9 +6447,11 @@ const BancoTransitorios = (function(){
       ida.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">—</td><td></td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
       h+=`<tr class="g"><td colspan="6">Fuente variable · barrido de tensión (incremento 9): lógica, divisor del base frente a la teoría del montaje y superposición en P5</td></tr>`;
       bar.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${f.error===null?'—':formatoPct(f.error)}</td><td>${f.criterio}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
-      h+=`</tbody></table><p class="hint">Mismas pruebas que <code>node pruebas/ejecutar_pruebas.js</code>, más las del barrido de tensión (incremento 9), que solo corren en el navegador. La regresión pone las resistencias en su valor nominal, compara con las lecturas del simulador original y restaura tu montaje al terminar.</p></div>`;
+      h+=`<tr class="g"><td colspan="6">Potenciómetro (incremento 10): modelo, óhmetro, divisor y efecto de carga, máxima transferencia de potencia, avisos y colocación</td></tr>`;
+      pot.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${f.error===null?'—':formatoPct(f.error)}</td><td>${f.criterio}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
+      h+=`</tbody></table><p class="hint">Mismas pruebas que <code>node pruebas/ejecutar_pruebas.js</code>, más las del barrido de tensión (incremento 9) y las del potenciómetro (incremento 10), que solo corren en el navegador. La regresión pone las resistencias en su valor nominal, compara con las lecturas del simulador original y restaura tu montaje al terminar.</p></div>`;
       L('bancoPruebas').innerHTML=h;
-      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos y ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión cumplen.`);
+      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos, ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión y ${pot.filter(f=>f.pasa).length}/${pot.length} del potenciómetro cumplen.`);
     }, 30);
   }
 
