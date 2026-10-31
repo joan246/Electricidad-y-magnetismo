@@ -43,8 +43,13 @@ Cada C, L, medidor, generador y sonda tiene una tarjeta en el panel con un núme
 * Un valor ≤ 0 o fuera de rango no se aplica y muestra un mensaje en rojo.
 
 ### 2.4 Fuentes
-* **Fuentes 1–3** (cajas de arriba): enciéndelas o apágalas y ajusta su tensión con el deslizador de 0 a 30 V. Son la **fuente variable** del protoboard.
+* **Fuentes 1–3** (cajas de arriba): enciéndelas o apágalas en «Fuentes de tensión DC». Son la **fuente variable** del protoboard, de 0 a 30 V, y su tensión se ajusta de tres maneras:
+  * **arrastrando el deslizador** (pasos de 0,1 V; con el deslizador seleccionado, las flechas del teclado también lo mueven);
+  * con los botones **−** y **+** (0,1 V por clic);
+  * **escribiendo el valor exacto** en la casilla (resolución de 0,01 V; un valor fuera de 0–30 V se recorta al límite).
+  * Las lecturas se actualizan mientras mueves la tensión.
   * Tienen una r interna de 0,5 Ω, que se puede quitar con «Fuentes ideales».
+  * Para recorrer un rango de tensiones y medir en cada una, usa el **barrido de tensión** (sección 4A).
 * **Generador** (componente): elige la forma (senoidal, cuadrada, triangular o DC), la amplitud A, la frecuencia f, el nivel DC, el ciclo útil D (en la cuadrada), la fase φ y su resistencia interna r_int (50 Ω por defecto).
   * Rojo = salida, negro = tierra del generador.
   * Con la forma **DC** es una fuente DC adicional, y puedes poner tantas como quieras.
@@ -104,6 +109,39 @@ Si el circuito no tiene solución (por ejemplo, dos fuentes de distinto valor en
 * **Desfase entre dos señales:** modo disparo; la tabla de medidas da la «fase vs CH1». También puedes medir Δt con los cursores y calcular φ = −360°·f·Δt.
 * **Frecuencia de una oscilación amortiguada:** ΔT entre dos picos con los cursores, y f_d = 1/ΔT.
 
+## 4A. Fuente variable · barrido de tensión
+
+La tarjeta «Fuente variable · barrido de tensión», debajo del osciloscopio, hace automáticamente lo que en el laboratorio se hace a mano: subir la fuente paso a paso y anotar los medidores en cada tensión.
+
+1. Arma el circuito (o carga un ejemplo) y conecta los medidores que quieras leer.
+2. Elige la **fuente variable** (1, 2 o 3), la **V inicial**, la **V final** (de 0 a 30 V; puede ser descendente) y el número de **puntos** (2 a 201). Al lado aparece el paso ΔV.
+3. Pulsa **Ejecutar barrido**. En cada punto se resuelve el montaje en DC y se leen:
+   * la **corriente que entrega la fuente**;
+   * el voltímetro y el amperímetro del banco, si están conectados;
+   * todos los voltímetros y amperímetros agregados que estén en el protoboard.
+4. Resultado:
+   * **Gráfica** de la magnitud elegida en «Eje y» frente a la tensión de la fuente, con los puntos y la recta ajustada. Por defecto muestra un amperímetro (curva I–V).
+   * **Ajuste lineal** de cada magnitud, y = m·V + b, con R². Cómo leerlo:
+     * en la corriente de la propia fuente (o de un amperímetro en serie con ella), **1/m = ΔV/ΔI es la resistencia equivalente que ve la fuente** (ley de Ohm);
+     * en una corriente de otra rama, 1/m es una transresistencia ΔV_F/ΔI; si es negativa, esa corriente baja cuando la fuente sube;
+     * en un voltímetro, **m es la ganancia** ΔV/ΔV_F (por ejemplo, la razón de un divisor);
+     * **b** es la lectura con la fuente en 0 V, es decir, el aporte de las **otras fuentes encendidas** (superposición). Con una sola fuente, b = 0;
+     * en un circuito lineal (R, y C y L en DC) **R² = 1**.
+   * **Tabla** con todos los puntos.
+5. **CSV**, **Capturar SVG** y **Anotar ajustes** (en el registro de medidas) guardan el resultado.
+
+Notas:
+
+* La fuente se enciende solo durante el barrido y después vuelve a su tensión y estado. Tu montaje no cambia.
+* Las lecturas son las del motor, **sin el ruido** de los instrumentos del banco.
+* Avisos: si la fuente entrega más de 1 A (probable cortocircuito) o si ve un circuito abierto (más de 100 MΩ: está sin conectar y solo pasa la fuga de 1 nS por nodo del modelo).
+
+**Recetas rápidas**
+
+* **Ley de Ohm:** «Divisor con medidas», barrido de 0 a 12 V. La pendiente del amperímetro da 1/(R1 + R4 + r interna + shunt + cables).
+* **Divisor de tensión:** en el mismo montaje, la ganancia del voltímetro es R4/R_total.
+* **Superposición:** carga P5 y barre la fuente 1 de 0 a 12 V con la fuente 2 encendida. La ordenada de cada medidor es lo que aporta la fuente 2 sola. La corriente de la fuente 1 cruza cero cerca de 3 V: ahí la fuente 2 la equilibra.
+
 ## 5. Ejemplos
 
 En «Circuitos de ejemplo»:
@@ -139,7 +177,8 @@ Obtienes la gráfica, la tabla «comparación con la teoría» y la «verificaci
   * la regresión de los 4 ejemplos del base frente a los valores dorados;
   * P5 en el protoboard;
   * los montajes del osciloscopio;
-  * la ida y vuelta guardar → cargar de los 11 ejemplos.
+  * la ida y vuelta guardar → cargar de los 11 ejemplos;
+  * las 19 pruebas del barrido de tensión (incremento 9): la lógica con casos calculados a mano, el divisor frente a la teoría del montaje y la superposición en P5. Estas solo corren en el navegador.
 * **«Protocolo de validación P1–P5 → Ejecutar validación»** mide 99 magnitudes en los 11 montajes y las compara con la *teoría del montaje* (contra la que se aplica el criterio) y con la *teoría ideal*. «Ver en el protoboard» abre cada montaje.
 * Las dos restauran tu montaje al terminar.
 * En una terminal, desde la carpeta `simulador_EM` (requiere Node.js 18 o superior):
@@ -167,3 +206,4 @@ Obtienes la gráfica, la tabla «comparación con la teoría» y la «verificaci
 | La simulación tarda | El circuito tiene constantes de tiempo muy distintas. Reduce t/div o usa el modo encendido. El osciloscopio avisa si tuvo que aumentar Δt. |
 | La lectura no coincide con la teoría | Cada resistencia del base tiene una desviación aleatoria dentro de su tolerancia (±5 % con banda dorada); «Valores por defecto» restaura las bandas pero vuelve a sortear esa desviación. Los **ejemplos del protocolo** sí usan el valor nominal. Recuerda también la r interna de las fuentes (0,5 Ω) y la del generador (50 Ω). |
 | «Sistema singular» | Hay una malla solo de fuentes de tensión, o un inductor directo sobre una fuente (corriente infinita en DC). |
+| El barrido dice «circuito abierto» | La fuente elegida no está conectada al montaje (o solo a algo de más de 100 MΩ). Revisa sus cables o elige otra fuente. |

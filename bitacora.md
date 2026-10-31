@@ -46,6 +46,23 @@ Convenciones:
   * **Corrección:** el manual decía que «Valores por defecto» deja los valores nominales. En realidad restaura las bandas pero sortea de nuevo la desviación; solo los ejemplos del protocolo usan los valores nominales.
 * Estado final: pruebas 308/308, regresión 86/86 y validación 99/99 (`node pruebas/ejecutar_pruebas.js`).
 
+### 30-oct-2026 · Incremento 9: fuente variable y barrido de tensión (Miguel Hinestroza, con IA)
+* Se probó `simulador.html` en un navegador sin interfaz (Chromium): pruebas del motor 308/308, regresión 4/4, P5 9/9, osciloscopio 11/11, ida y vuelta 11/11 y validación 99/99, sin errores en la consola.
+* **Problema:** el deslizador de las fuentes 1–3 no se podía arrastrar. Al moverlo 100 px desde 12 V quedaba en 12,4 V. **Causa:** cada evento `input` llamaba a `buildSrcPanel()`, que reescribe el panel con `innerHTML`: el control que se estaba arrastrando salía del DOM y el arrastre se cortaba tras el primer paso. **Solución:** `fijarTensionFuente()` solo cambia el estado y los otros controles de la misma fuente; el panel se reconstruye solo al encender o apagar. Ahora el mismo arrastre recorre todo el rango.
+* Se agregaron a cada fuente una casilla para escribir la tensión exacta (0,01 V; fuera de 0–30 V se recorta) y botones − y + de 0,1 V. El LCD de la fuente muestra centésimas cuando se escriben.
+* **Problema:** después de un ejemplo del base (Serie, Paralelo, Mixto, Divisor) el panel seguía mostrando «Fuente 2: Encendida» aunque `preset()` la había apagado. **Solución:** el botón del ejemplo reconstruye el panel. `preset()` no se tocó, porque lo usa la regresión.
+* **Incremento 9 · barrido de tensión:**
+  * `BarridoTension` (código puro): valores del barrido con extremos exactos, recta de mínimos cuadrados con sumas centradas, R², interpretación de la pendiente, CSV y gráfica SVG.
+  * `PanelBarrido` (interfaz): mide con las mismas funciones que las lecturas en vivo (`solveDC`, `connected`, `lecturaMedidor`) y devuelve la fuente a su tensión y estado en un `finally`.
+* **Problema:** con la fuente 3 sin conectar, la «resistencia vista» salía de 1,5 GΩ y no había aviso. **Causa:** la fuga de 1 nS por nodo del modelo del base deja pasar unos 20 nA a 30 V. **Solución:** se avisa de circuito abierto cuando la fuente ve más de 100 MΩ (`G_ABIERTO`).
+* **Decisión:** la etiqueta «R = ΔV/ΔI» solo se usa para la corriente de la propia fuente. En otra rama, 1/m es una transresistencia; en P5, AM2 da −3,87 kΩ porque su corriente baja al subir la fuente 1.
+* 19 pruebas nuevas en «Ejecutar pruebas del motor»:
+  * lógica: ajuste calculado a mano con m = 0,9, b = −0,1 y R² = 0,852632;
+  * divisor frente a la teoría del montaje (R_total = 1 270,673 Ω): error de 2·10⁻⁵ %;
+  * superposición en P5 frente a la teoría de dos mallas: error < 0,06 %;
+  * restauración de la fuente.
+* Estado: 308/308 del motor, 19/19 del barrido y 99/99 de la validación, sin errores en la consola. Las pruebas del barrido usan la interfaz y no están en `pruebas/ejecutar_pruebas.js`.
+
 ---
 
 ## 2. Reuniones del grupo [completar]
@@ -83,3 +100,4 @@ Lo que cada integrante comprobó por su cuenta: por ejemplo, el cálculo a mano 
 | Fecha | Herramienta | Para qué | Qué se revisó o cambió después |
 |---|---|---|---|
 | 14 a 20-oct-2026 | Claude (Anthropic), Claude Code | análisis del base, código del motor, interfaz, pruebas y borradores de los documentos | [completar: qué revisó cada integrante] |
+| 30-oct-2026 | Claude (Anthropic) | prueba del simulador, corrección del deslizador de las fuentes, incremento 9 (barrido de tensión), sus pruebas y la documentación | [completar: qué revisó Miguel] |

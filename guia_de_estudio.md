@@ -17,12 +17,14 @@ Explica **cada bloque de código y cada ecuación** de `simulador.html`. Para ca
 | 3 | `modelo-montaje` | `ModeloMontaje` | no | datos del protoboard: componentes, netlist, JSON, ejemplos |
 | 4 | `osciloscopio-logica` | `Osciloscopio` | no | plan del montaje, disparo, medidas, pantalla SVG |
 | 5 | `validacion-protocolo` | `ValidacionProtocolo` | no | protocolo P1–P5 y rendimiento |
-| 6 | `montaje-ui` | funciones sueltas | sí | dibujo de C, L, medidores, generador y sondas; avisos; lecturas en vivo |
-| 7 | `<script>` sin id | código del **base** | sí | protoboard, instrumentos, paneles, registro (13 funciones adaptadas) |
-| 8 | `ui-componentes` | funciones sueltas | sí | panel de componentes, ejemplos |
-| 9 | `ui-osciloscopio` | `PanelOsciloscopio` | sí | controles y cursores del osciloscopio |
-| 10 | `ui-validacion` | `PanelValidacion` | sí | panel del protocolo |
-| 11 | `ui-temporal` | `BancoTransitorios` | sí | bancos RC, RL, RLC y RL–RC |
+| 6 | `barrido-logica` | `BarridoTension` | no | incr. 9: valores del barrido, mínimos cuadrados, CSV y gráfica SVG |
+| 7 | `montaje-ui` | funciones sueltas | sí | dibujo de C, L, medidores, generador y sondas; avisos; lecturas en vivo |
+| 8 | `<script>` sin id | código del **base** | sí | protoboard, instrumentos, paneles (fuente variable: `fijarTensionFuente`, incr. 9), registro (13 funciones adaptadas) |
+| 9 | `ui-componentes` | funciones sueltas | sí | panel de componentes, ejemplos |
+| 10 | `ui-osciloscopio` | `PanelOsciloscopio` | sí | controles y cursores del osciloscopio |
+| 11 | `ui-validacion` | `PanelValidacion` | sí | panel del protocolo |
+| 12 | `ui-barrido` | `PanelBarrido` | sí | incr. 9: barrido de tensión sobre el montaje y sus 19 pruebas |
+| 13 | `ui-temporal` | `BancoTransitorios` | sí | bancos RC, RL, RLC y RL–RC |
 
 **Por qué hay bloques «puros».** El motor, el modelo, la lógica del osciloscopio, las pruebas y la validación no tocan `document` ni `window`. Por eso `pruebas/entorno.js` los extrae del HTML y los ejecuta en Node.js, en el mismo orden que el navegador, y las pruebas corren sobre **el mismo código** que usa la app. `montaje-ui` va antes del base porque el base llama a sus funciones al cargar (`drawTray` dibuja con `componenteSVG`).
 
@@ -233,6 +235,38 @@ Para comparar con el **mismo circuito** que se simula, las fórmulas incluyen lo
 
 ---
 
+## 5A. Fuente variable y barrido de tensión (incremento 9: `BarridoTension` y `PanelBarrido`)
+
+**Corrección del deslizador.** El deslizador de las fuentes no se podía arrastrar. Cada evento `input` llamaba a `buildSrcPanel()`, que reescribe el panel con `innerHTML`, y el `<input type="range">` que el ratón estaba arrastrando dejaba de existir: el arrastre se cortaba tras el primer paso. Ahora `fijarTensionFuente(i, v, origen)` cambia `st.srcs[i].V`, recorta a 0–30 V, redondea a 0,01 V, actualiza los **otros** controles de esa fuente y llama a `redraw()`. El panel solo se reconstruye al encender o apagar una fuente.
+
+**El barrido.** Para cada V_k de `valores(v0, v1, n)` se pone la fuente en V_k, se llama a `solveDC()` (la misma función de las lecturas en vivo) y se leen:
+
+* la corriente entregada, I_F = −`srcI` (el motor da i < 0 en una fuente que entrega);
+* el voltímetro y el amperímetro del banco;
+* los medidores agregados, con `lecturaMedidor`.
+
+Al final, un `finally` devuelve la fuente a su tensión y estado.
+
+**Mínimos cuadrados (`ajustar`).** Con sumas centradas, que evitan restar números grandes casi iguales:
+
+  m = Σ(V − V̄)(y − ȳ) / Σ(V − V̄)²,  b = ȳ − m·V̄,  R² = [Σ(V − V̄)(y − ȳ)]² / [Σ(V − V̄)² · Σ(y − ȳ)²]
+
+**Física.**
+
+* En un circuito lineal cada tensión y corriente es una función afín de cada fuente (superposición): y = m·V_F + b, así que **R² = 1**.
+* **b** es la lectura con V_F = 0, es decir, el aporte de las demás fuentes. Con una sola fuente, b = 0.
+* Para la corriente de la propia fuente, **1/m = ΔV/ΔI** es la resistencia de Thévenin que ella ve (ley de Ohm). En otra rama, 1/m es una transresistencia. En P5, AM2 da −3,87 kΩ porque la corriente de la fuente 2 baja al subir la fuente 1.
+* En un voltímetro, **m** es la ganancia: R4/R_total en el divisor.
+
+**Comprobación.**
+
+* **Divisor:** R_total = r_int + 4 cables + R1 + R_shunt + R4 ‖ (R_in + 2 cables) = 0,5 + 0,08 + 1 000 + 0,1 + 269,9927 = 1 270,673 Ω. La pendiente del amperímetro coincide a 2·10⁻⁵ %; el resto es la fuga de 1 nS por nodo.
+* **P5:** las pendientes y ordenadas coinciden con la teoría de dos mallas (∂I1/∂V1 e I1 con V1 = 0) a menos de 0,06 %, que es el efecto de los shunts y la r interna.
+
+**Circuito abierto.** Una fuente sin conectar «ve» unos 1,5 GΩ por la fuga de 1 nS por nodo (≈ 20 nA a 30 V). Por eso el barrido avisa cuando la fuente ve más de 100 MΩ.
+
+---
+
 ## 6. Física que hay que saber explicar
 
 * **τ = RC.** En t = τ la exponencial vale e^(−1) = 0,368, así que v_C llega al 1 − 0,368 = 63,2 % del valor final. En 5τ está al 99,3 %.
@@ -270,6 +304,10 @@ Para comparar con el **mismo circuito** que se simula, las fórmulas incluyen lo
 16. **¿Qué limitaciones tiene el modelo?** Componentes ideales y lineales (sin resistencia del alambre de la bobina, sin fugas, sin semiconductores); medidores nuevos sin ruido; escala lenta estimada con más de 2 variables de estado.
 17. **¿Cómo se garantiza que los resultados son repetibles?** Los montajes están en `ejemplos/*.json`, con las resistencias en su valor nominal. `node pruebas/ejecutar_pruebas.js` regenera todas las tablas, y la prueba de ida y vuelta comprueba que guardar y cargar da las mismas trazas bit a bit.
 18. **¿Qué hizo la IA y qué hicieron ustedes?** [Responder con lo que realmente hizo el grupo.] La IA asistió en el análisis del base, los borradores del código y las pruebas y la documentación. Todo está verificado con pruebas automáticas contra soluciones analíticas.
+19. **¿Por qué el deslizador no se podía arrastrar?** Porque cada movimiento reescribía el panel con `innerHTML` y el control arrastrado desaparecía del DOM. Ahora el movimiento solo cambia el estado y los otros controles de esa fuente.
+20. **¿Qué significa la pendiente del barrido?** En la corriente de la fuente, su inverso es la resistencia equivalente que ve la fuente (ley de Ohm). En un voltímetro es la ganancia, como la razón de un divisor. La ordenada es el aporte de las otras fuentes: superposición.
+21. **¿Por qué R² da exactamente 1?** Porque el circuito es lineal: las ecuaciones MNA son lineales en las fuentes. Un R² < 1 indicaría un elemento no lineal o un error, y el barrido lo avisa.
+22. **¿Por qué una fuente sin conectar entrega 20 nA?** Por la fuga GMIN de 1 nS por nodo, heredada del base. Equivale a unos 1,5 GΩ, y el barrido lo reporta como circuito abierto.
 
 ---
 
@@ -281,3 +319,4 @@ Para comparar con el **mismo circuito** que se simula, las fórmulas incluyen lo
 4. **Euler frente al trapezoidal:** en P3a cambia el método a Euler y mira cómo la oscilación muere antes. Ese es el amortiguamiento artificial.
 5. **Protocolo de validación → Ejecutar:** 99/99. Abre una tabla y explica las dos teorías.
 6. **Regresión:** carga «Serie» del base. Funciona igual que antes, y las pruebas muestran los valores dorados.
+7. **Fuente variable:** arrastra el deslizador de la fuente 1 y mira cómo cambian las lecturas. Luego carga P5 y, en «Fuente variable · barrido de tensión», barre la fuente 1 de 0 a 12 V. Las rectas tienen R² = 1, la ordenada es el aporte de la fuente 2, y AM1 cruza cero cerca de 3 V.

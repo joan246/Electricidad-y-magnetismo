@@ -6,7 +6,7 @@ Ampliación del simulador `simulador_protoboard_dc.html` del curso a un laborato
 
 | Ruta | Contenido |
 |---|---|
-| `simulador.html` | **simulador final** (incrementos 1 a 8) |
+| `simulador.html` | **simulador final** (incrementos 1 a 9) |
 | `simulador_v1.html` | prototipo de la Fase 1 (incrementos 1 a 5: motor MNA, R, C y L ilimitados, generador, medidores, bancos; sin osciloscopio sobre el montaje) |
 | `base/simulador_protoboard_dc.html` | archivo original del profesor, sin cambios (referencia de la regresión) |
 | `informe_fase1.md` | informe de la Fase 1 |
@@ -32,6 +32,8 @@ Abrir `simulador.html` con doble clic en un navegador moderno (Chrome, Edge o Fi
 * **Circuitos de ejemplo → Ejemplos del protocolo de validación:** arma cualquiera de los 11 montajes P1a–P5 y configura el osciloscopio.
 * **Osciloscopio** (debajo del protoboard): «Ejecutar» simula el montaje.
 * **Protocolo de validación P1–P5:** ejecuta la validación completa y muestra las tablas.
+* **Fuentes 1–3 (fuente variable):** deslizador, botones − y + de 0,1 V o valor exacto escrito (0–30 V).
+* **Fuente variable · barrido de tensión** (incremento 9): recorre la tensión de una fuente, lee todos los medidores en cada punto y ajusta una recta (R = ΔV/ΔI, ganancia de un divisor, superposición). Exporta CSV y SVG.
 * **Simulación temporal:** bancos RC, RL, RLC y RL–RC con fuente variable o generador.
 
 El detalle está en `manual_usuario.md`.
@@ -44,7 +46,7 @@ Requiere Node.js 18 o superior:
 node pruebas/ejecutar_pruebas.js
 ```
 
-El script prueba `simulador.html`. Termina con código 0 si todo cumple y reescribe `resultados/pruebas_motor.md` y `resultados/validacion.md`. Las mismas pruebas se pueden correr dentro de la aplicación con «Ejecutar pruebas del motor» y con «Protocolo de validación → Ejecutar».
+El script prueba `simulador.html`. Termina con código 0 si todo cumple y reescribe `resultados/pruebas_motor.md` y `resultados/validacion.md`. Las mismas pruebas se pueden correr dentro de la aplicación con «Ejecutar pruebas del motor» y con «Protocolo de validación → Ejecutar». Las 19 pruebas del barrido de tensión (incremento 9) usan la interfaz del protoboard y solo corren en el navegador, con «Ejecutar pruebas del motor».
 
 Para regenerar los ejemplos y los anexos del osciloscopio, después de cambiar un montaje en `ModeloMontaje.EJEMPLOS`:
 
