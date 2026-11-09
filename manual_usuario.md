@@ -29,6 +29,7 @@ La pantalla tiene dos zonas:
 * **Más componentes:** en «Componentes y medidores» hay un botón para cada tipo:
   * **+ Resistencia** (con bandas, como las del base);
   * **+ Capacitor** (1 pF a 1 F) y **+ Inductor** (1 µH a 10 H);
+  * **+ Potenciómetro** (10 Ω a 10 MΩ, sección 2.5);
   * **+ Voltímetro**, **+ Amperímetro**, **+ Generador** y **+ Sonda (canal)**.
 * El componente nuevo aparece en la **bandeja** de la derecha. Las flechas ◀ ▶ cambian de página cuando no caben todos.
 * **Arrastra** el componente desde la bandeja al protoboard. «Colocación» decide la orientación:
@@ -53,6 +54,24 @@ Cada C, L, medidor, generador y sonda tiene una tarjeta en el panel con un núme
 * **Generador** (componente): elige la forma (senoidal, cuadrada, triangular o DC), la amplitud A, la frecuencia f, el nivel DC, el ciclo útil D (en la cuadrada), la fase φ y su resistencia interna r_int (50 Ω por defecto).
   * Rojo = salida, negro = tierra del generador.
   * Con la forma **DC** es una fuente DC adicional, y puedes poner tantas como quieras.
+
+### 2.5 Potenciómetro (incremento 10)
+* Tiene **tres patas en una misma franja**: los extremos **A** (izquierda) y **B** (derecha) y el **cursor**, que cae en la **columna intermedia**. Por ejemplo, con A en C3 y B en C8, el cursor queda en C5 y se marca con un anillo naranja.
+  * Siempre se coloca **horizontal**, aunque «Colocación» diga vertical.
+  * Para conectar el cursor usa **cualquier orificio libre de esa columna** (filas A–E, o F–J si está abajo).
+* En su tarjeta se ajusta:
+  * **R** (la resistencia total entre A y B);
+  * la **posición del cursor**, con el deslizador (0,5 %) o escribiendo el valor exacto (0,1 %).
+  * Debajo se ven R<sub>AC</sub>, R<sub>CB</sub> y R<sub>AB</sub>.
+* Modelo: dos resistencias en serie que comparten el nodo del cursor.
+  * R<sub>AC</sub> = R·α<sub>e</sub> y R<sub>CB</sub> = R·(1 − α<sub>e</sub>), con α<sub>e</sub> = ε + (1 − 2ε)·α.
+  * ε = 0,1 % es la **resistencia residual** de los extremos: como en uno real, el cursor nunca toca del todo el extremo.
+  * Entre A y B siempre hay exactamente R.
+* Dos formas de usarlo:
+  * **Divisor de tensión:** A y B a la fuente y la salida en el cursor.
+  * **Reóstato** (resistencia variable): solo A y el cursor (B libre o unido al cursor).
+  * Si solo conectas un terminal, aparece un aviso.
+* En «Análisis (modo docente)» se ven R<sub>AC</sub>, R<sub>CB</sub>, sus corrientes y la potencia. Hay un aviso si pasa de 0,5 W.
 
 ## 3. Medir
 
@@ -109,9 +128,9 @@ Si el circuito no tiene solución (por ejemplo, dos fuentes de distinto valor en
 * **Desfase entre dos señales:** modo disparo; la tabla de medidas da la «fase vs CH1». También puedes medir Δt con los cursores y calcular φ = −360°·f·Δt.
 * **Frecuencia de una oscilación amortiguada:** ΔT entre dos picos con los cursores, y f_d = 1/ΔT.
 
-## 4A. Fuente variable · barrido de tensión
+## 4A. Barridos · fuente variable (tensión de una fuente)
 
-La tarjeta «Fuente variable · barrido de tensión», debajo del osciloscopio, hace automáticamente lo que en el laboratorio se hace a mano: subir la fuente paso a paso y anotar los medidores en cada tensión.
+La tarjeta «Barridos · fuente variable y potenciómetro», debajo del osciloscopio, hace automáticamente lo que en el laboratorio se hace a mano: subir la fuente paso a paso y anotar los medidores en cada tensión. En «Variable» elige **tensión de una fuente**.
 
 1. Arma el circuito (o carga un ejemplo) y conecta los medidores que quieras leer.
 2. Elige la **fuente variable** (1, 2 o 3), la **V inicial**, la **V final** (de 0 a 30 V; puede ser descendente) y el número de **puntos** (2 a 201). Al lado aparece el paso ΔV.
@@ -142,12 +161,34 @@ Notas:
 * **Divisor de tensión:** en el mismo montaje, la ganancia del voltímetro es R4/R_total.
 * **Superposición:** carga P5 y barre la fuente 1 de 0 a 12 V con la fuente 2 encendida. La ordenada de cada medidor es lo que aporta la fuente 2 sola. La corriente de la fuente 1 cruza cero cerca de 3 V: ahí la fuente 2 la equilibra.
 
+## 4B. Barridos · cursor de un potenciómetro (incremento 10)
+
+En la misma tarjeta, con «Variable» = **cursor de un potenciómetro**, se recorre la posición del cursor (por defecto de 0 a 100 % en 41 puntos). Los ejemplos «Potenciómetro · …» dejan todo listo.
+
+En cada punto se leen R<sub>AC</sub>, V<sub>AC</sub>, V<sub>CB</sub>, I<sub>AC</sub> (de A al cursor), I<sub>CB</sub> (del cursor a B) y la potencia del potenciómetro, además de todos los medidores. El cuadro **«Análisis del potenciómetro»** reconoce cómo está conectado.
+
+* **Reóstato (máxima transferencia de potencia).** Un segmento conduce y el otro no. Ese segmento es la carga R<sub>L</sub>, y el resto del circuito es un equivalente de Thévenin.
+  * Con todos los puntos se ajusta la recta v<sub>L</sub> = V<sub>th</sub> − R<sub>th</sub>·i<sub>L</sub> (R² = 1), que da V<sub>th</sub> y R<sub>th</sub>.
+  * La teoría dice que la potencia en la carga es máxima cuando **R<sub>L</sub> = R<sub>th</sub>**, con **P<sub>máx</sub> = V<sub>th</sub>²/(4R<sub>th</sub>)**.
+  * El cuadro compara la teoría con el máximo medido, refinado con una parábola por los tres puntos mayores, e indica la posición del cursor donde R<sub>L</sub> = R<sub>th</sub>.
+  * La gráfica de P marca esa posición con una línea verde.
+  * La diferencia medida en R<sub>L</sub> (≈ 0,5 % con 101 puntos) sale de la separación entre puntos: P es muy plana cerca del máximo.
+* **Divisor (efecto de carga).** Los dos segmentos conducen. Se compara la salida medida v<sub>CB</sub>/v<sub>AB</sub> con la de un divisor sin carga, R<sub>CB</sub>/R.
+  * Si lo conectado al cursor casi no toma corriente (un voltímetro de 10 MΩ en un potenciómetro de 10 kΩ), la desviación es < 0,1 % y la salida es proporcional a la posición.
+  * Con una carga comparable a R (prueba con R<sub>in</sub> = 10 kΩ en el voltímetro) la salida se curva: ese es el **efecto de carga**, de hasta 12 % de v<sub>AB</sub> en ese caso.
+
+**Recetas rápidas**
+
+* **Máxima transferencia:** «Potenciómetro · máxima transferencia». Es la fuente de 10 V con R1 = 1 kΩ y POT1 de 10 kΩ como reóstato. Barre con 101 puntos: el máximo (≈ 25 mW) está con el cursor en ≈ 9,9 %, es decir, R<sub>AC</sub> ≈ 1 kΩ = R<sub>th</sub>.
+* **Efecto de carga:** «Potenciómetro · divisor». Barre una vez con VM1 en 10 MΩ y otra con VM1 en 10 kΩ, y compara la gráfica de VM1 y la desviación del análisis.
+
 ## 5. Ejemplos
 
 En «Circuitos de ejemplo»:
 
 * **Serie, Paralelo, Mixto y Divisor:** los cuatro ejemplos originales del base.
 * **P5 · dos mallas** y **Osciloscopio · carga RC / filtro RC con generador:** accesos directos.
+* **Potenciómetro · divisor** y **Potenciómetro · máxima transferencia** (incremento 10): arman el montaje y preparan el barrido del cursor.
 * **Ejemplos del protocolo de validación:** los 11 montajes P1a … P5. Arman el circuito, con las resistencias en su valor nominal, y configuran el osciloscopio.
 
 Los mismos montajes están en `ejemplos/*.json` y se abren con «Cargar circuito».
@@ -178,7 +219,14 @@ Obtienes la gráfica, la tabla «comparación con la teoría» y la «verificaci
   * P5 en el protoboard;
   * los montajes del osciloscopio;
   * la ida y vuelta guardar → cargar de los 11 ejemplos;
-  * las 19 pruebas del barrido de tensión (incremento 9): la lógica con casos calculados a mano, el divisor frente a la teoría del montaje y la superposición en P5. Estas solo corren en el navegador.
+  * las 19 pruebas del barrido de tensión (incremento 9): la lógica con casos calculados a mano, el divisor frente a la teoría del montaje y la superposición en P5;
+  * las 21 pruebas del potenciómetro (incremento 10):
+    * modelo y JSON;
+    * óhmetro;
+    * divisor frente a la teoría del montaje y efecto de carga frente a la fórmula exacta;
+    * máxima transferencia: V<sub>th</sub> y R<sub>th</sub> a < 10⁻³ %, P<sub>máx</sub> a < 0,01 %;
+    * avisos y colocación.
+  * Las pruebas de los incrementos 9 y 10 solo corren en el navegador.
 * **«Protocolo de validación P1–P5 → Ejecutar validación»** mide 99 magnitudes en los 11 montajes y las compara con la *teoría del montaje* (contra la que se aplica el criterio) y con la *teoría ideal*. «Ver en el protoboard» abre cada montaje.
 * Las dos restauran tu montaje al terminar.
 * En una terminal, desde la carpeta `simulador_EM` (requiere Node.js 18 o superior):
@@ -207,3 +255,5 @@ Obtienes la gráfica, la tabla «comparación con la teoría» y la «verificaci
 | La lectura no coincide con la teoría | Cada resistencia del base tiene una desviación aleatoria dentro de su tolerancia (±5 % con banda dorada); «Valores por defecto» restaura las bandas pero vuelve a sortear esa desviación. Los **ejemplos del protocolo** sí usan el valor nominal. Recuerda también la r interna de las fuentes (0,5 Ω) y la del generador (50 Ω). |
 | «Sistema singular» | Hay una malla solo de fuentes de tensión, o un inductor directo sobre una fuente (corriente infinita en DC). |
 | El barrido dice «circuito abierto» | La fuente elegida no está conectada al montaje (o solo a algo de más de 100 MΩ). Revisa sus cables o elige otra fuente. |
+| El potenciómetro no se deja colocar | Necesita una franja (filas A–J) con el orificio del cursor libre. No va en los rieles ni cruzando el canal. |
+| «Por POT1 no circula corriente» | Conecta al menos dos de sus terminales (por ejemplo, A y el cursor) a un circuito con una fuente encendida. |

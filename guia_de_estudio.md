@@ -17,13 +17,13 @@ Explica **cada bloque de código y cada ecuación** de `simulador.html`. Para ca
 | 3 | `modelo-montaje` | `ModeloMontaje` | no | datos del protoboard: componentes, netlist, JSON, ejemplos |
 | 4 | `osciloscopio-logica` | `Osciloscopio` | no | plan del montaje, disparo, medidas, pantalla SVG |
 | 5 | `validacion-protocolo` | `ValidacionProtocolo` | no | protocolo P1–P5 y rendimiento |
-| 6 | `barrido-logica` | `BarridoTension` | no | incr. 9: valores del barrido, mínimos cuadrados, CSV y gráfica SVG |
+| 6 | `barrido-logica` | `BarridoTension` | no | incr. 9 y 10: valores del barrido, mínimos cuadrados, análisis del potenciómetro (Thévenin, máxima transferencia, efecto de carga), CSV y gráfica SVG |
 | 7 | `montaje-ui` | funciones sueltas | sí | dibujo de C, L, medidores, generador y sondas; avisos; lecturas en vivo |
 | 8 | `<script>` sin id | código del **base** | sí | protoboard, instrumentos, paneles (fuente variable: `fijarTensionFuente`, incr. 9), registro (13 funciones adaptadas) |
 | 9 | `ui-componentes` | funciones sueltas | sí | panel de componentes, ejemplos |
 | 10 | `ui-osciloscopio` | `PanelOsciloscopio` | sí | controles y cursores del osciloscopio |
 | 11 | `ui-validacion` | `PanelValidacion` | sí | panel del protocolo |
-| 12 | `ui-barrido` | `PanelBarrido` | sí | incr. 9: barrido de tensión sobre el montaje y sus 19 pruebas |
+| 12 | `ui-barrido` | `PanelBarrido` | sí | incr. 9 y 10: barridos (fuente o cursor) sobre el montaje; 19 + 21 pruebas |
 | 13 | `ui-temporal` | `BancoTransitorios` | sí | bancos RC, RL, RLC y RL–RC |
 
 **Por qué hay bloques «puros».** El motor, el modelo, la lógica del osciloscopio, las pruebas y la validación no tocan `document` ni `window`. Por eso `pruebas/entorno.js` los extrae del HTML y los ejecuta en Node.js, en el mismo orden que el navegador, y las pruebas corren sobre **el mismo código** que usa la app. `montaje-ui` va antes del base porque el base llama a sus funciones al cargar (`drawTray` dibuja con `componenteSVG`).
@@ -265,6 +265,42 @@ Al final, un `finally` devuelve la fuente a su tensión y estado.
 
 **Circuito abierto.** Una fuente sin conectar «ve» unos 1,5 GΩ por la fuga de 1 nS por nodo (≈ 20 nA a 30 V). Por eso el barrido avisa cuando la fuente ve más de 100 MΩ.
 
+## 5B. Potenciómetro (incremento 10: tipo `POT` en `ModeloMontaje`, barrido del cursor)
+
+**Modelo.** El potenciómetro son dos resistencias en serie que comparten el nodo del cursor C. `elementoMotor(id, c, nA, nB, nC)` devuelve `id:ac` entre A y C, e `id:cb` entre C y B:
+
+  R_AC = R·α_e,  R_CB = R·(1 − α_e),  α_e = ε + (1 − 2ε)·α,  ε = `RESIDUAL_POT` = 0,001
+
+ε es la **resistencia residual** de los extremos. Un cursor real nunca toca del todo el extremo, y además el motor no acepta R = 0. Con esta forma, R_AC + R_CB = R para cualquier α, así que entre A y B siempre se mide R.
+
+**Dónde va el cursor (`cursorPotenciometro(a, b)`).** En la columna intermedia entre A y B, en la misma fila: con A en C3 y B en C8, el cursor queda en C5. Es una función pura sobre los nombres de los orificios, así que el JSON no cambia de formato: solo guarda `a`, `b` y `posicion`, y el cursor se deduce.
+
+Cambios en el código del base:
+
+* `occ()`: ocupa también el orificio del cursor;
+* `placeRes()`: rechaza el potenciómetro si no hay lugar para el cursor o el orificio está ocupado;
+* `buildNet()`: pasa el nodo del cursor;
+* `pairFor(h, 'h')`: el potenciómetro siempre va horizontal;
+* `drawRes()`: dibuja la flecha y el anillo del cursor.
+
+El control del cursor no reconstruye la tarjeta mientras se arrastra. Es la misma lección del deslizador de las fuentes.
+
+**Avisos (`diagnostico`).** El nodo del cursor ya tiene **dos** terminales propios (R_AC y R_CB), así que el cursor queda en el aire si su nodo no tiene más de 2. Usarlo con solo dos terminales (reóstato) es normal: solo se avisa si quedan dos o tres terminales libres.
+
+**Barrido del cursor (`analizarPotenciometro`).**
+
+* **Reóstato:** un segmento conduce y el otro no (|i| < 10⁻⁴ del otro; lo que queda son las fugas de 1 nS).
+  * Para la red lineal que ve la carga, v_L = V_th − R_th·i_L. Es una recta exacta por todos los puntos, aunque R_L cambie, y de ella salen V_th y R_th.
+  * P_L = V_th²·R_L/(R_L + R_th)². Derivando, dP/dR_L = 0 en **R_L = R_th**, y **P_máx = V_th²/(4R_th)**.
+  * En el máximo, la mitad de la potencia de la fuente equivalente se queda en R_th: eficiencia del 50 %.
+  * El máximo medido se refina con la parábola por los tres puntos mayores, en función de R_L.
+* **Divisor:** sin carga, v_CB/v_AB = R_CB/R, que es proporcional a la posición. Con una carga R_L en el cursor, v_CB/v_AB = (R_CB‖R_L)/(R_AC + R_CB‖R_L). La diferencia es el efecto de carga: con R_L = R llega a ~12 % de v_AB.
+
+**Comprobación.**
+
+* **Ejemplo de máxima transferencia:** 10 V, R1 = 1 kΩ, POT1 de 10 kΩ. R_th = (R1 + 0,5 Ω + 3 cables) ‖ 10 MΩ = 1 000,460 Ω, y la recta da 1 000,459 Ω (8·10⁻⁵ %). P_máx = 24,9835 mW frente a 24,9832 mW medida (0,001 %), con el cursor en 9,92 %.
+* **Divisor:** coincide con la teoría del montaje a 4·10⁻⁵ % de 12 V. Con 10 kΩ en el cursor, la desviación medida (12,149 %) coincide con la fórmula exacta a 10⁻⁴ %.
+
 ---
 
 ## 6. Física que hay que saber explicar
@@ -308,6 +344,11 @@ Al final, un `finally` devuelve la fuente a su tensión y estado.
 20. **¿Qué significa la pendiente del barrido?** En la corriente de la fuente, su inverso es la resistencia equivalente que ve la fuente (ley de Ohm). En un voltímetro es la ganancia, como la razón de un divisor. La ordenada es el aporte de las otras fuentes: superposición.
 21. **¿Por qué R² da exactamente 1?** Porque el circuito es lineal: las ecuaciones MNA son lineales en las fuentes. Un R² < 1 indicaría un elemento no lineal o un error, y el barrido lo avisa.
 22. **¿Por qué una fuente sin conectar entrega 20 nA?** Por la fuga GMIN de 1 nS por nodo, heredada del base. Equivale a unos 1,5 GΩ, y el barrido lo reporta como circuito abierto.
+23. **¿Cómo se modela el potenciómetro?** Como dos resistencias, R_AC = R·α_e y R_CB = R·(1 − α_e), que comparten el nodo del cursor. α_e incluye una residual del 0,1 % en cada extremo, para que ningún segmento valga 0 Ω y R_AC + R_CB = R siempre.
+24. **¿Por qué la potencia es máxima con R_L = R_th?** P = V_th²R_L/(R_L + R_th)². Al derivar e igualar a cero queda R_th − R_L = 0. Con R_L menor, la potencia se queda en R_th; con R_L mayor, cae la corriente. En el máximo, P = V_th²/(4R_th) y la eficiencia es del 50 %.
+25. **¿Cómo obtienen V_th y R_th sin abrir el circuito?** Con la recta v_L = V_th − R_th·i_L por los puntos del barrido: es el método de la recta de carga. El corte con el eje da V_th y la pendiente da −R_th. La recta es exacta (R² = 1) porque el resto del circuito es lineal.
+26. **¿Por qué el R_L del máximo medido difiere 0,5 % de R_th?** Porque P(R_L) es muy plana cerca del máximo y los puntos están cada 100 Ω. La parábola por los tres puntos mayores lo acerca, pero no es exacta. La potencia máxima sí coincide a 0,001 %.
+27. **¿Qué es el efecto de carga en un divisor?** Lo que se conecta al cursor queda en paralelo con R_CB y baja la salida. Solo con una carga mucho mayor que R la salida es proporcional a la posición: 10 MΩ en 10 kΩ desvía 0,015 %, y 10 kΩ desvía hasta 12 %.
 
 ---
 
@@ -319,4 +360,5 @@ Al final, un `finally` devuelve la fuente a su tensión y estado.
 4. **Euler frente al trapezoidal:** en P3a cambia el método a Euler y mira cómo la oscilación muere antes. Ese es el amortiguamiento artificial.
 5. **Protocolo de validación → Ejecutar:** 99/99. Abre una tabla y explica las dos teorías.
 6. **Regresión:** carga «Serie» del base. Funciona igual que antes, y las pruebas muestran los valores dorados.
-7. **Fuente variable:** arrastra el deslizador de la fuente 1 y mira cómo cambian las lecturas. Luego carga P5 y, en «Fuente variable · barrido de tensión», barre la fuente 1 de 0 a 12 V. Las rectas tienen R² = 1, la ordenada es el aporte de la fuente 2, y AM1 cruza cero cerca de 3 V.
+7. **Fuente variable:** arrastra el deslizador de la fuente 1 y mira cómo cambian las lecturas. Luego carga P5 y, en «Barridos · fuente variable y potenciómetro» (variable: tensión de una fuente), barre la fuente 1 de 0 a 12 V. Las rectas tienen R² = 1, la ordenada es el aporte de la fuente 2, y AM1 cruza cero cerca de 3 V.
+8. **Potenciómetro:** carga «Potenciómetro · máxima transferencia» y ejecuta el barrido del cursor con 101 puntos. La curva de P tiene su máximo donde está la línea verde (R_L = R_th ≈ 1 kΩ), y el cuadro de análisis compara V_th²/(4R_th) con lo medido. Luego carga «Potenciómetro · divisor», pon VM1 en 10 kΩ y muestra el efecto de carga.
