@@ -114,6 +114,12 @@ PruebasMotor.pruebaP5Montaje(BV).forEach(f =>
 PruebasMotor.pruebaDosMallasMontaje(BV).forEach(f =>
   reg('Dos mallas, 3 puentes y 2 resistencias en el protoboard: lecturas frente al análisis de mallas (simulador final) · error en %', f.prueba, f.obtenido, f.esperado, f.error, f.pasa));
 
+// e3) régimen senoidal y barrido de frecuencia (incremento 12): análisis fasorial frente a la teoría y al transitorio
+PruebasMotor.pruebaRespuestaFrecuencia().forEach(f =>
+  reg('Régimen senoidal y barrido de frecuencia: análisis fasorial, resonancia y filtros (simulador final) · error en % o en °', f.prueba, f.obtenido, f.esperado, f.error, f.pasa));
+PruebasMotor.pruebaRlcParaleloMontaje(BV).forEach(f =>
+  reg('RLC paralelo en el protoboard: fasorial frente a la teoría del montaje y al osciloscopio (simulador final) · error en % o en °', f.prueba, f.obtenido, f.esperado, f.error, f.pasa));
+
 // f) osciloscopio sobre montajes del protoboard (incremento 6)
 PruebasMotor.pruebaOsciloscopioMontaje(BV).forEach(f =>
   reg('Osciloscopio sobre montajes del protoboard (simulador final) · error en % o en °', f.prueba, f.obtenido, f.esperado, f.error, f.pasa));
@@ -173,7 +179,7 @@ const ARCHIVO_VALIDACION = path.join(E.CARPETA_RESULTADOS, 'validacion.md');
 const pasanReg = filasReg.filter(f => f.pasa).length;
 const totalReg = filasReg.length;
 let md = '';
-md += '# Resultados de las pruebas del motor — incrementos 1 a 11\n\n';
+md += '# Resultados de las pruebas del motor — incrementos 1 a 12\n\n';
 md += `Generado automáticamente por \`pruebas/ejecutar_pruebas.js\` el ${new Date().toISOString()} con Node ${process.version}.\n`;
 md += `Todos los valores "motor" son **calculados por el motor** (no son medidas de laboratorio). `;
 md += `Los valores "teórico" son la **solución analítica de referencia**.\n\n`;

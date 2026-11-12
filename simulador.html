@@ -246,6 +246,7 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
         <button class="mini" id="addAM">+ Amperímetro</button>
       </div>
       <div class="btnrow" style="margin-top:6px">
+        <button class="mini" id="addDC">+ Fuente DC</button>
         <button class="mini" id="addGEN">+ Generador</button>
         <button class="mini" id="addCH">+ Sonda (canal)</button>
       </div>
@@ -294,6 +295,7 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
         <button class="mini" data-preset="divisor">Divisor con medidas</button>
         <button class="mini" id="ejemploP5">P5 · dos mallas, dos fuentes</button>
         <button class="mini" id="ejemploDosMallas">Dos mallas · 3 puentes y 2 R</button>
+        <button class="mini" id="ejemploRlcParalelo">RLC paralelo · resonancia</button>
         <button class="mini" id="ejemploOscRC">Osciloscopio · carga RC</button>
         <button class="mini" id="ejemploOscFiltro">Osciloscopio · filtro RC con generador</button>
         <button class="mini" id="ejemploPotDivisor">Potenciómetro · divisor</button>
@@ -427,6 +429,30 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
     <div class="caja" id="barPotCaja" style="margin-top:12px;display:none"><h3>Análisis del potenciómetro (incremento 10)</h3><div id="barPot"></div></div>
     <div class="caja" style="margin-top:12px"><h3>Ajuste lineal de cada magnitud</h3><div id="barAjustes"><p class="empty">Sin barrido.</p></div></div>
     <div class="caja" style="margin-top:12px"><h3>Puntos del barrido</h3><div id="barTabla" class="barTabla"><p class="empty">Sin barrido.</p></div></div>
+  </div>
+</details>
+
+<!-- ===== AMPLIACIÓN · barrido de frecuencia (incremento 12) ===== -->
+<details class="tcard" id="cardFrecuencia">
+  <summary>Barrido de frecuencia · resonancia y filtros <span class="tag2">incremento 12</span></summary>
+  <div class="tbody">
+    <p class="hint" style="margin-top:0">
+      Recorre la frecuencia de un generador del protoboard de f<sub>inicial</sub> a f<sub>final</sub> y, en cada una, resuelve el montaje en
+      <b>régimen senoidal permanente</b> (análisis fasorial con las mismas ecuaciones del motor: R → 1/R, C → jωC, L → jωL).
+      Muestra la <b>amplitud</b> y la <b>fase</b> respecto al generador de la magnitud elegida: una sonda, un medidor agregado, la corriente
+      del generador o la tensión y la corriente de cualquier R, C o L.<br><br>
+      De la curva obtiene la <b>frecuencia de resonancia</b> f<sub>0</sub> (el pico), las <b>frecuencias de corte</b> donde la amplitud baja a
+      pico/√2 (−3 dB), el <b>ancho de banda</b> y el <b>factor de calidad</b> Q = f<sub>0</sub>/(f<sub>2</sub> − f<sub>1</sub>). En un RLC serie la
+      corriente es máxima y queda en fase con el generador en f<sub>0</sub> = 1/(2π√(LC)); por debajo adelanta (domina C) y por encima atrasa (domina L).
+      En un filtro RC el corte está en f<sub>c</sub> = 1/(2πRC), con ∓45° de fase.<br><br>
+      Las fuentes DC y los demás generadores no aportan a la frecuencia del barrido (superposición). El barrido no cambia el montaje.
+      Prueba con los ejemplos «P4b · RLC serie en resonancia» (magnitud: I que entrega GEN1) o «RLC paralelo · resonancia».
+    </p>
+    <div class="ctrls" id="frCtrls"></div>
+    <div class="estado" id="frEstado">Coloca un generador (o carga un ejemplo con generador) y pulsa «Ejecutar barrido».</div>
+    <div id="frGrafica"></div>
+    <div class="caja" style="margin-top:12px"><h3>Pico, frecuencias de corte y factor de calidad</h3><div id="frAnalisis"><p class="empty">Sin barrido.</p></div></div>
+    <div class="caja" style="margin-top:12px"><h3>Puntos del barrido</h3><div id="frTabla" class="barTabla"><p class="empty">Sin barrido.</p></div></div>
   </div>
 </details>
 
@@ -851,6 +877,64 @@ const MotorMNA = (function(){
     return Object.assign({ok:true, avisos:red.avisos}, extraer(s, red, x));
   }
 
+  /* ---------- 6B. Régimen senoidal permanente (incr. 12) ----------
+     Análisis fasorial del MISMO circuito a la frecuencia f: cada tensión y cada corriente
+     es un número complejo (amplitud y fase). Son las ecuaciones del MNA con
+        R: conductancia 1/R              C: admitancia jωC
+        L: rama con v1 − v2 − jωL·i = 0  (con rama no se divide por ωL)
+        V: rama con v1 − v2 = E; E = amplitud ∠ 0° en la fuente de excitación y 0 en las demás
+           (por superposición, las fuentes DC y los otros generadores no aportan a esta f)
+     El sistema complejo (G + jX)·x = b se resuelve como uno real del doble de tamaño,
+        [ G  −X ] [x_re]   [b_re]
+        [ X   G ] [x_im] = [b_im]
+     con la misma factorización LU del motor. opciones.fuente = id de la fuente de excitación;
+     opciones.amplitud (opcional) reemplaza la amplitud de su forma de onda.
+     Las fases quedan referidas a esa fuente. */
+  function resolverAC(circuito, f, opciones){
+    const op=normalizarOpciones(opciones), red=prepararRed(circuito, op);
+    const errores=red.errores.slice(), idFuente=opciones && opciones.fuente;
+    if(!(f>0) || !Number.isFinite(f)) errores.push('La frecuencia debe ser un número mayor que 0 Hz.');
+    const fuente=red.elems.find(e=>e.tipo==='V' && e.id===idFuente);
+    if(!errores.length && !fuente) errores.push(`No hay una fuente de tensión llamada "${idFuente}" conectada al circuito.`);
+    if(errores.length) return {ok:false, errores, avisos:red.avisos};
+    const amplitud = (opciones.amplitud!==undefined) ? opciones.amplitud : (fuente.forma ? fuente.forma.amplitud : fuente.valor);
+    const w=2*Math.PI*f, nN=red.nombres.length, rama=new Int32Array(red.elems.length).fill(-1);
+    let nR=0;
+    red.elems.forEach(e=>{ if(e.tipo==='V' || e.tipo==='L') rama[e.pos]=nN+(nR++); });
+    const n=nN+nR, N=2*n, A=new Float64Array(N*N), b=new Float64Array(N);
+    // (i, j) de la parte real G y de la parte imaginaria X, en los dos bloques (índice −1 = tierra)
+    const real=(i,j,g)=>{ if(i<0 || j<0) return; A[i*N+j]+=g; A[(i+n)*N+(j+n)]+=g; };
+    const imag=(i,j,x)=>{ if(i<0 || j<0) return; A[i*N+(j+n)]-=x; A[(i+n)*N+j]+=x; };
+    const entre=(sello,i,j,y)=>{ sello(i,i,y); sello(j,j,y); sello(i,j,-y); sello(j,i,-y); };   // admitancia y entre i y j
+    for(let i=0;i<nN;i++) real(i,i,op.gmin);
+    red.elems.forEach(e=>{
+      const k=rama[e.pos];
+      if(e.tipo==='R') entre(real, e.i1, e.i2, 1/e.valor);
+      else if(e.tipo==='C') entre(imag, e.i1, e.i2, w*e.valor);
+      else if(k>=0){                                  // V y L: la corriente de rama sale de n1 y entra a n2
+        real(e.i1,k,1); real(e.i2,k,-1); real(k,e.i1,1); real(k,e.i2,-1);
+        if(e.tipo==='L') imag(k,k,-w*e.valor);
+        else if(e===fuente) b[k]=amplitud;
+      }
+    });
+    const F=factorizarLU(A, N);
+    if(!F.ok) return {ok:false, avisos:red.avisos, errores:[`Sistema singular en régimen senoidal a ${f} Hz: `+
+      `una malla formada solo por fuentes de tensión e inductores ideales no tiene solución única.`]};
+    const x=resolverLU(F, b, new Float64Array(N));
+    const z=k=>(k<0 ? {re:0, im:0} : {re:x[k], im:x[k+n]});
+    const v={[NODO_TIERRA]:{re:0, im:0}}, vElem={}, i={};
+    red.nombres.forEach((nm,k)=>{ v[nm]=z(k); });
+    red.elems.forEach(e=>{
+      const a=z(e.i1), c=z(e.i2), d={re:a.re-c.re, im:a.im-c.im}, k=rama[e.pos];
+      vElem[e.id]=d;
+      i[e.id] = k>=0 ? z(k)
+              : e.tipo==='R' ? {re:d.re/e.valor, im:d.im/e.valor}
+              : e.tipo==='C' ? {re:-w*e.valor*d.im, im:w*e.valor*d.re}      // jωC·v
+              : {re:0, im:0};
+    });
+    return {ok:true, avisos:red.avisos, f, amplitud, v, vElem, i};
+  }
+
   /* ---------- 7. Transitorio ----------
      1) Estado inicial consistente en t = 0⁺: cada capacitor se reemplaza por
         una fuente de tensión v0 (su tensión no puede saltar). Así se obtiene
@@ -1106,7 +1190,7 @@ const MotorMNA = (function(){
 
   return Object.freeze({
     NODO_TIERRA, GMIN_S, METODOS, FORMAS, PASOS_POR_ESCALA, PUNTOS_POR_PERIODO,
-    resolverDC, crearSimulacion, simularTransitorio,
+    resolverDC, resolverAC, crearSimulacion, simularTransitorio,
     matrizEstado, escalasTiempo, pasoAutomatico, valorGenerador, esFlanco,
     validarGenerador:(forma, id)=>validarForma({id:id||'Generador', forma}),
     interno:{ factorizarLU, resolverLU, radioEspectral }   // expuesto solo para pruebas
@@ -2375,6 +2459,139 @@ const PruebasMotor = (function(){
     return filas;
   }
 
+  /* ==================== PRUEBAS DEL INCREMENTO 12 (régimen senoidal y barrido de frecuencia) ====================
+     MotorMNA.resolverAC (análisis fasorial) se compara con la teoría y con el transitorio del
+     propio motor: son dos métodos independientes y deben dar la misma amplitud y la misma fase.
+     Después se prueba el análisis del barrido (pico, frecuencias de corte, ancho de banda y Q). */
+  const RLC_SERIE_REF = Object.freeze({R:20, L:10e-3, C:1e-6});     // el RLC serie del protocolo (P3a, P4b)
+  const RC_REF = Object.freeze({R:1e3, C:1e-6});                    // el filtro RC del protocolo (P1, P4a)
+  const F_CRUCE_AC = 1200;                 // Hz · fuera de la resonancia: amplitud y fase no triviales
+  const PERIODOS_CRUCE_AC = 30;            // el transitorio (α = R/2L = 1 000 s⁻¹) ya decayó: e^(−25)
+  const filasDePrueba=()=>{
+    const filas=[];
+    const fila=(prueba, obtenido, esperado, clase)=>{
+      const ev=evaluarFila({magnitud:prueba, motor:obtenido, teorico:esperado, unidad:'', clase:clase||'estable'});
+      filas.push({prueba, obtenido, esperado, error:ev.error, unidadError:ev.unidadError, pasa:ev.pasa});
+    };
+    const chequeo=(prueba, obtenido, esperado, pasa)=>filas.push({prueba, obtenido, esperado, error:null, unidadError:'', pasa:!!pasa});
+    return {filas, fila, chequeo};
+  };
+  const senoUnitario=f=>({tipo:'seno', amplitud:1, frecuencia:f, dc:0, ciclo:0.5, fase:0});
+  const circuitoRC=f=>({elementos:[{id:'V1',tipo:'V',n1:'in',n2:'0',valor:0,forma:senoUnitario(f)},
+    {id:'R1',tipo:'R',n1:'in',n2:'c',valor:RC_REF.R},{id:'C1',tipo:'C',n1:'c',n2:'0',valor:RC_REF.C}]});
+  const circuitoRLC=f=>({elementos:[{id:'V1',tipo:'V',n1:'in',n2:'0',valor:0,forma:senoUnitario(f)},
+    {id:'R1',tipo:'R',n1:'in',n2:'a',valor:RLC_SERIE_REF.R},{id:'L1',tipo:'L',n1:'a',n2:'b',valor:RLC_SERIE_REF.L},
+    {id:'C1',tipo:'C',n1:'b',n2:'0',valor:RLC_SERIE_REF.C}]});
+  function pruebaRespuestaFrecuencia(){
+    const {filas, fila, chequeo}=filasDePrueba(), AC={fuente:'V1', gmin:0};
+    const {R, L, C}=RLC_SERIE_REF, f0=1/(2*Math.PI*Math.sqrt(L*C)), fc=1/(2*Math.PI*RC_REF.R*RC_REF.C);
+    // (a) filtro RC en la frecuencia de corte: |H| = 1/√2 y −45°; la corriente adelanta 45°
+    const a=MotorMNA.resolverAC(circuitoRC(fc), fc, AC);
+    fila('fasorial · RC en f_c: |v_C| / V = 1/√2', Cx.abs(a.vElem.C1), Math.SQRT1_2);
+    fila('fasorial · RC en f_c: fase de v_C (°)', Cx.grados(a.vElem.C1), -45, 'fase');
+    fila('fasorial · RC en f_c: |i| = V/(√2·R) (A)', Cx.abs(a.i.R1), Math.SQRT1_2/RC_REF.R);
+    fila('fasorial · RC en f_c: fase de i (°)', Cx.grados(a.i.R1), 45, 'fase');
+    // (b) RLC serie en resonancia: Z = R, corriente en fase y |v_C| = |v_L| = Q·V
+    const b=MotorMNA.resolverAC(circuitoRLC(f0), f0, AC), Q=Math.sqrt(L/C)/R;
+    fila('fasorial · RLC serie en f0: |i| = V/R (A)', Cx.abs(b.i.R1), 1/R);
+    fila('fasorial · RLC serie en f0: fase de i (°)', Cx.grados(b.i.R1), 0, 'fase');
+    fila('fasorial · RLC serie en f0: |v_C| = Q·V (V)', Cx.abs(b.vElem.C1), Q);
+    fila('fasorial · RLC serie en f0: fase de v_C (°)', Cx.grados(b.vElem.C1), -90, 'fase');
+    fila('fasorial · RLC serie en f0: |v_L| = Q·V (V)', Cx.abs(b.vElem.L1), Q);
+    fila('fasorial · RLC serie en f0: fase de v_L (°)', Cx.grados(b.vElem.L1), 90, 'fase');
+    // (c) dos métodos independientes: fasorial frente al transitorio (trapezoidal) medido en sus últimos períodos
+    const f=F_CRUCE_AC, circ=circuitoRLC(f), pa=MotorMNA.pasoAutomatico(circ, {gmin:0});
+    const sim=MotorMNA.simularTransitorio(circ, {dt:pa.dt, tFin:PERIODOS_CRUCE_AC/f, metodo:MotorMNA.METODOS.TRAPEZOIDAL, gmin:0});
+    const c=MotorMNA.resolverAC(circ, f, AC);
+    if(!sim.ok || !c.ok) chequeo('fasorial frente al transitorio: simulación', (sim.errores||c.errores||[]).join(' '), 'sin errores', false);
+    else{
+      const r=sim.resultados, Xs=fasorMedido(r, r.vElem.V1, f, PERIODOS_MEDICION);
+      const rel=x=>Cx.div(fasorMedido(r, x, f, PERIODOS_MEDICION), Xs);     // relativo a la fuente
+      const vC=rel(r.vElem.C1), iR=rel(r.i.R1);
+      fila(`RLC serie a ${f} Hz · |v_C|: fasorial frente al transitorio (V)`, Cx.abs(c.vElem.C1), Cx.abs(vC));
+      fila(`RLC serie a ${f} Hz · fase de v_C: fasorial frente al transitorio (°)`, Cx.grados(c.vElem.C1), Cx.grados(vC), 'fase');
+      fila(`RLC serie a ${f} Hz · |i|: fasorial frente al transitorio (A)`, Cx.abs(c.i.R1), Cx.abs(iR));
+      fila(`RLC serie a ${f} Hz · fase de i: fasorial frente al transitorio (°)`, Cx.grados(c.i.R1), Cx.grados(iR), 'fase');
+    }
+    // (d) barrido cerca de la resonancia: pico en f0, ancho de banda R/(2πL), Q = ω0·L/R y ±45° en los cortes
+    if(typeof BarridoFrecuencia==='undefined'){ chequeo('barrido de frecuencia', 'BarridoFrecuencia no está cargado', 'cargado', false); return filas; }
+    const BF=BarridoFrecuencia, corriente=[{clave:'I', nombre:'i', unidad:'A', elemento:'R1', signo:1}];
+    const d=BF.ejecutar(circuitoRLC(f0), 'V1', corriente, {f0:500, f1:5000, n:401, escala:'log'}, {gmin:0}), an=BF.analizar(d, 'I');
+    chequeo('barrido RLC serie (corriente): respuesta pasa-banda con el pico dentro del intervalo', `${an.tipo}${an.pico.interior?' interior':''}`, 'banda interior', an.tipo==='banda' && an.pico.interior);
+    fila('barrido RLC serie: frecuencia del pico = f0 = 1/(2π√(LC)) (Hz)', an.pico.f, f0);
+    fila('barrido RLC serie: corriente en el pico = V/R (A)', an.pico.amp, 1/R);
+    fila('barrido RLC serie: fase de la corriente en el pico (°)', an.pico.fase, 0, 'fase');
+    fila('barrido RLC serie: ancho de banda f2 − f1 = R/(2πL) (Hz)', an.ancho, R/(2*Math.PI*L));
+    fila('barrido RLC serie: Q = f0/(f2 − f1) = √(L/C)/R', an.Q, Q);
+    fila('barrido RLC serie: fase en el corte inferior f1 (°)', an.faseBajo, 45, 'fase');
+    fila('barrido RLC serie: fase en el corte superior f2 (°)', an.faseAlto, -45, 'fase');
+    const dl=BF.ejecutar(circuitoRLC(f0), 'V1', corriente, {f0:1000, f1:2200, n:241, escala:'lineal'}, {gmin:0});
+    fila('barrido RLC serie en escala lineal: frecuencia del pico (Hz)', BF.analizar(dl, 'I').pico.f, f0);
+    // (e) filtros: el mismo RC es pasa-bajas en v_C y pasa-altas en v_R, con el corte en f_c
+    const e=BF.ejecutar(circuitoRC(fc), 'V1', [{clave:'C', nombre:'v_C', unidad:'V', elemento:'C1', signo:1},
+      {clave:'R', nombre:'v_R', unidad:'V', elemento:'R1', signo:1}], {f0:1, f1:30e3, n:401, escala:'log'}, {gmin:0});
+    const aC=BF.analizar(e, 'C'), aR=BF.analizar(e, 'R');
+    chequeo('barrido RC: v_C es pasa-bajas y v_R es pasa-altas', `${aC.tipo} / ${aR.tipo}`, 'bajas / altas', aC.tipo==='bajas' && aR.tipo==='altas');
+    fila('barrido RC: frecuencia de corte de v_C = 1/(2πRC) (Hz)', aC.alto, fc);
+    fila('barrido RC: fase de v_C en el corte (°)', aC.faseAlto, -45, 'fase');
+    fila('barrido RC: frecuencia de corte de v_R = 1/(2πRC) (Hz)', aR.bajo, fc);
+    fila('barrido RC: fase de v_R en el corte (°)', aR.faseBajo, 45, 'fase');
+    // (f) casos límite: mensajes en lugar de resultados sin sentido
+    const sinF=MotorMNA.resolverAC(circuitoRC(fc), 0, AC), sinFuente=MotorMNA.resolverAC(circuitoRC(fc), fc, {fuente:'X9', gmin:0});
+    const dos=circuitoRC(fc); dos.elementos.push({id:'V2',tipo:'V',n1:'in',n2:'0',valor:5});
+    const singular=MotorMNA.resolverAC(dos, fc, AC);
+    chequeo('frecuencia 0 Hz: mensaje de error', sinF.ok ? 'sin error' : sinF.errores[0], 'error', !sinF.ok);
+    chequeo('fuente de excitación inexistente: mensaje de error', sinFuente.ok ? 'sin error' : sinFuente.errores[0], 'error', !sinFuente.ok);
+    chequeo('dos fuentes de tensión en paralelo: sistema singular con mensaje', singular.ok ? 'sin error' : singular.errores[0], 'error', !singular.ok);
+    chequeo('barrido con f final ≤ f inicial: se rechaza', BF.validar({f0:100, f1:100, n:11, escala:'log'}) || 'aceptado', 'mensaje', !!BF.validar({f0:100, f1:100, n:11, escala:'log'}));
+    return filas;
+  }
+
+  /* RLC paralelo armado en el protoboard (necesita las funciones del simulador): B = {st, buildNet}.
+     Teoría del montaje, sin los cables de 0,02 Ω: el tanque es Y_t = 1/Rp + 1/R_CH2 + j(ωC − 1/(ωL));
+     en serie con Rs forma la rama que carga al generador (r_int), en paralelo con la sonda CH1. */
+  function pruebaRlcParaleloMontaje(B){
+    const {filas, fila, chequeo}=filasDePrueba(), M=ModeloMontaje, O=Osciloscopio;
+    const E=M.construirEjemploRlcParalelo(B.st);
+    const red=B.buildNet(false), circ=M.netlist(red.els, red.srcs, red.reac, [], {transitorio:true});
+    const g=B.st.res.GEN1, f0=g.forma.frecuencia, w=2*Math.PI*f0, A=g.forma.amplitud;
+    const L=10e-3, C=1e-6, Rp=1e3, Rs=1e3, Rch=M.TIPOS.CH.valorDefecto;
+    const ac=MotorMNA.resolverAC(circ, f0, {fuente:'GEN1', referenciaVirtual:true});
+    if(!ac.ok){ chequeo('RLC paralelo: análisis senoidal del montaje', ac.errores.join(' '), 'sin errores', false); return filas; }
+    const Zt=Cx.div(Cx.c(1,0), Cx.c(1/Rp+1/Rch, w*C-1/(w*L))), Zrama=Cx.suma(Cx.c(Rs,0), Zt), Zcarga=Cx.paralelo(Zrama, Cx.c(Rch,0));
+    const V1=Cx.mul(Cx.c(A,0), Cx.div(Zcarga, Cx.suma(Cx.c(g.valor,0), Zcarga))), V2=Cx.mul(V1, Cx.div(Zt, Zrama));
+    const Ig=Cx.div(Cx.resta(Cx.c(A,0), V1), Cx.c(g.valor,0));
+    fila('RLC paralelo en f0: |CH1| en bornes del generador (V)', Cx.abs(ac.vElem.CH1), Cx.abs(V1));
+    fila('RLC paralelo en f0: |CH2| = tensión del tanque (V)', Cx.abs(ac.vElem.CH2), Cx.abs(V2));
+    fila('RLC paralelo en f0: fase de CH2 (el tanque es resistivo: ≈ 0°) (°)', Cx.grados(ac.vElem.CH2), Cx.grados(V2), 'fase');
+    fila('RLC paralelo en f0: |i_L| = |v|/(ωL) (A)', Cx.abs(ac.i.L1), Cx.abs(V2)/(w*L));
+    fila('RLC paralelo en f0: fase de i_L (atrasa 90°) (°)', Cx.grados(ac.i.L1), Cx.grados(V2)-90, 'fase');
+    fila('RLC paralelo en f0: |i_C| = |v|·ωC (A)', Cx.abs(ac.i.C1), Cx.abs(V2)*w*C);
+    fila('RLC paralelo en f0: fase de i_C (adelanta 90°) (°)', Cx.grados(ac.i.C1), Cx.grados(V2)+90, 'fase');
+    fila('RLC paralelo en f0: corriente que entrega el generador (A)', Cx.abs(ac.i.GEN1), Cx.abs(Ig));
+    fila('RLC paralelo en f0: |i_L| / |i_generador| (la corriente circula dentro del tanque)', Cx.abs(ac.i.L1)/Cx.abs(ac.i.GEN1), Cx.abs(V2)/(w*L)/Cx.abs(Ig));
+    // barrido del ejemplo: pico en f0 y Q = R_eq·√(C/L), con R_eq = Rp ‖ R_CH2 ‖ (Rs + r_int ‖ R_CH1)
+    if(typeof BarridoFrecuencia!=='undefined'){
+      const b=BarridoFrecuencia.ejecutar(circ, 'GEN1', [{clave:'CH2', nombre:'CH2', unidad:'V', elemento:'CH2', signo:1}], E.barrido);
+      const an=BarridoFrecuencia.analizar(b, 'CH2'), Req=1/(1/Rp+1/Rch+1/(Rs+g.valor*Rch/(g.valor+Rch)));
+      chequeo('barrido del RLC paralelo (CH2): respuesta pasa-banda con el pico dentro del intervalo', `${an.tipo}${an.pico.interior?' interior':''}`, 'banda interior', an.tipo==='banda' && an.pico.interior);
+      fila('barrido del RLC paralelo: frecuencia del pico = f0 (Hz)', an.pico.f, f0);
+      fila('barrido del RLC paralelo: Q = f0/(f2 − f1) = R_eq·√(C/L)', an.Q, Req*Math.sqrt(C/L));
+    }
+    // el mismo montaje en el tiempo (osciloscopio, trapezoidal): dos métodos independientes
+    const aj=Object.assign({}, E.osciloscopio), S=simularMontajeOsc(B, M.MONTAJE_RLC_PARALELO, aj);
+    if(!S.r) chequeo('RLC paralelo: simulación en el tiempo', (S.out.errores||[]).join(' '), 'sin errores', false);
+    else{
+      const r=S.r, v=O.ventana(r, aj, r.vElem.CH1), p1=O.recortar(r, r.vElem.CH1, v.t0, v.t1), y2=O.recortar(r, r.vElem.CH2, v.t0, v.t1).y;
+      const m1=O.medidas(p1.t, p1.y), m2=O.medidas(p1.t, y2);
+      fila('RLC paralelo · osciloscopio frente al fasorial: |CH2| (V)', m2.pp/2, Cx.abs(ac.vElem.CH2));
+      fila('RLC paralelo · osciloscopio frente al fasorial: |CH2|/|CH1|', m2.pp/m1.pp, Cx.abs(ac.vElem.CH2)/Cx.abs(ac.vElem.CH1));
+      fila('RLC paralelo · osciloscopio frente al fasorial: fase de CH2 respecto a CH1 (°)', O.desfase(p1.t, p1.y, y2),
+        Cx.grados(ac.vElem.CH2)-Cx.grados(ac.vElem.CH1), 'fase');
+    }
+    return filas;
+  }
+
   /* ==================== PRUEBAS DEL INCREMENTO 7 (datos y ejemplos) ==================== */
   // Texto JSON con las claves ordenadas: el orden en que se crearon los componentes no importa
   function canonico(x){
@@ -2541,6 +2758,7 @@ const PruebasMotor = (function(){
     netlistDesdeBase, compararConBase, VALORES_DORADOS, lecturasEjemplo, compararDorados,
     teoriaDosMallas, pruebaP5Montaje, P5_REF, pruebaOsciloscopioMontaje, pruebaEjemplosIdaVuelta, canonico,
     teoriaDosMallasUnaFuente, pruebaDosMallasMontaje, DOS_MALLAS_REF,
+    pruebaRespuestaFrecuencia, pruebaRlcParaleloMontaje,          // incr. 12
     errorMaxNormPct, errorPct, valorEn, instanteCruce, medirTau, picos, medirOscilacion, ajusteLineal,
     PASOS_POR_ESCALA, VENTANA_ESCALAS, FRACCION_TAU, CRITERIO,
     CRITERIO_ESTABLE_PCT, CRITERIO_TRANSITORIO_PCT, CRITERIO_CONVERGENCIA_PCT
@@ -2963,6 +3181,34 @@ const ModeloMontaje = (function(){
     return aJSON(st, {ejemplo:id, prueba:E.prueba, titulo:E.titulo, descripcion:E.descripcion, osciloscopio:E.osciloscopio});
   }
 
+  /* ---------- ejemplo: RLC paralelo en resonancia (incr. 12) ----------
+     Fuera del protocolo P1–P5 (EJEMPLOS), así la validación y sus 11 montajes no cambian.
+     Generador senoidal (1 V, f0, r_int 50 Ω) → Rs (1 kΩ) → tanque: L (10 mH) ‖ C (1 µF) ‖ Rp (1 kΩ).
+     L, C y Rp cruzan el canal en las columnas 7, 10 y 13, unidas arriba y abajo con cables.
+     CH1 = generador, CH2 = tensión del tanque.
+     En f0 = 1/(2π√(LC)) las corrientes de L y de C son iguales y opuestas: se cancelan, el
+     tanque se ve como Rp y su tensión es máxima. Q = R_eq·√(C/L), con R_eq = Rp ‖ (Rs + r_int). */
+  const MONTAJE_RLC_PARALELO = Object.freeze({
+    fuentes:sinFuentes,
+    cables:[['B2J','B7J','negro'], ['T7A','T10A','amarillo'], ['T10B','T13B','amarillo'], ['B7I','B10J','negro'], ['B10I','B13J','negro']],
+    resistencias:{},
+    componentes:[['GEN','T2D','B2H',{valor:50, forma:seno(1, F0_RLC)}], ['R','T2C','T7C',{bands:BANDAS.R1k}],
+                 ['L','T7D','B7G',{valor:10e-3}], ['C','T10D','B10G',{valor:1e-6}], ['R','T13D','B13G',{bands:BANDAS.R1k}],
+                 ['CH','T2B','B2I'], ['CH','T13C','B13H']]
+  });
+  const EJEMPLO_RLC_PARALELO = Object.freeze({titulo:'RLC paralelo · resonancia (f0 ≈ 1,59 kHz)', montaje:MONTAJE_RLC_PARALELO,
+    osciloscopio:disparo(200e-6, 0),                                      // 2 ms de pantalla ≈ 3 períodos
+    barrido:Object.freeze({f0:200, f1:12e3, n:201, escala:'log'}), magnitud:'CH2',
+    descripcion:'Generador seno 1 V en f0, r_int 50 Ω → Rs (1 kΩ) → L (10 mH) ‖ C (1 µF) ‖ Rp (1 kΩ). CH1 = generador, CH2 = tensión del tanque (máxima en f0).'});
+  function construirEjemploRlcParalelo(st){
+    IDS_BASE.forEach(k=>{ st.res[k].bands=BANDAS_BASE[k].slice(); st.res[k].dev=0; });
+    st.ideal=false;
+    aplicarMontaje(st, MONTAJE_RLC_PARALELO);
+    return EJEMPLO_RLC_PARALELO;
+  }
+  // Fuente DC adicional (botón «+ Fuente DC»): un generador en forma «DC»
+  const FUENTE_DC_NUEVA = Object.freeze({tension:5, rInterna:0.5});      // V y Ω · r interna igual a la de las fuentes del banco
+
   /* ---------- guardar y cargar (JSON) ----------
      extra: campos opcionales que se agregan al archivo (incr. 7: título, descripción y los
      ajustes del osciloscopio). Un archivo con campos que no conoce sigue siendo válido. */
@@ -3023,7 +3269,9 @@ const ModeloMontaje = (function(){
     RESIDUAL_POT, POSICION_DEFECTO, POTENCIA_NOMINAL_POT, alfaEfectivo, segmentosPot, cursorPotenciometro, validarPosicion,
     MONTAJE_POT_DIVISOR, MONTAJE_POT_MAXIMA, EJEMPLOS_POT, construirEjemploPot,
     // incr. 11: dos mallas, 3 puentes y 2 resistencias
-    MONTAJE_DOS_MALLAS, EJEMPLO_DOS_MALLAS, construirEjemploDosMallas
+    MONTAJE_DOS_MALLAS, EJEMPLO_DOS_MALLAS, construirEjemploDosMallas,
+    // incr. 12: RLC paralelo y fuente DC adicional
+    MONTAJE_RLC_PARALELO, EJEMPLO_RLC_PARALELO, construirEjemploRlcParalelo, FUENTE_DC_NUEVA
   });
 })();
 </script>
@@ -3907,6 +4155,189 @@ const BarridoTension = (function(){
 
   return Object.freeze({ V_MIN, V_MAX, PUNTOS_MIN, PUNTOS_MAX, DEFECTO, VARIABLES, TOL_CONSTANTE, TOL_REOSTATO, TOL_LINEAL_PCT,
     validar, valores, ajustar, ejecutar, interpretar, analizarPotenciometro, etiquetaEje, csv, graficaSVG, marcas, pasoRedondo });
+})();
+</script>
+
+<script id="frecuencia-logica">
+/* ============================================================
+   AMPLIACIÓN · (i) BARRIDO DE FRECUENCIA (incremento 12)
+   Código PURO (sin DOM). Respuesta en frecuencia del montaje: para cada
+   frecuencia f de una lista se resuelve el circuito en régimen senoidal
+   permanente (MotorMNA.resolverAC, análisis fasorial) y se guardan la
+   amplitud y la fase de cada magnitud respecto al generador.
+   De la curva de amplitud de una magnitud se obtienen:
+     · el pico: frecuencia de resonancia f0 (vértice de la parábola por los
+       3 puntos mayores);
+     · las frecuencias de corte f1 y f2: donde la amplitud baja a 1/√2 del
+       pico (−3 dB, la mitad de la potencia), por interpolación lineal;
+     · el ancho de banda B = f2 − f1 y el factor de calidad Q = f0/B.
+   Si el máximo está en un extremo del barrido solo hay una frecuencia de
+   corte: la respuesta es la de un filtro pasa-bajas o pasa-altas.
+   ============================================================ */
+const BarridoFrecuencia = (function(){
+  'use strict';
+  const F_MIN = 0.1, F_MAX = 1e7;             // Hz · rango admitido para el barrido
+  const PUNTOS_MIN = 5, PUNTOS_MAX = 2001;    // puntos del barrido
+  const ESCALAS = Object.freeze(['log','lineal']);
+  const DEFECTO = Object.freeze({f0:100, f1:10e3, n:201, escala:'log'});   // dos décadas, 100 puntos por década
+  const NIVEL_CORTE = Math.SQRT1_2;           // −3 dB: amplitud = pico/√2
+  const PREFIJOS = [['M',1e6],['k',1e3],['',1],['m',1e-3],['µ',1e-6],['n',1e-9],['p',1e-12]];
+  const COLORES = Object.freeze({fondo:'#0b0f12', reticula:'#1f2933', eje:'#6c7a8a', texto:'#9aa7b6',
+                                 amplitud:'#4fd1e0', fase:'#f0a12e', marca:'#3fbf6f'});
+  const TIPOS_RESPUESTA = Object.freeze({banda:'pasa-banda (resonancia)', bajas:'pasa-bajas', altas:'pasa-altas', plana:'sin corte en el intervalo'});
+
+  const fmt=(x,u,c)=>ModeloMontaje.formatoValor(x,u,c||4);
+  const grados=z=>Math.atan2(z.im, z.re)*180/Math.PI;
+  const envolver=d=>{ const x=((d+180)%360+360)%360-180; return x===-180 ? 180 : x; };   // a (−180°, 180°]
+
+  function validar(p){
+    if(![p.f0,p.f1].every(Number.isFinite)) return 'La frecuencia inicial y la final deben ser números.';
+    if(p.f0<F_MIN || p.f1>F_MAX) return `Use frecuencias entre ${String(F_MIN).replace('.',',')} Hz y ${F_MAX/1e6} MHz.`;
+    if(!(p.f1>p.f0)) return 'La frecuencia final debe ser mayor que la inicial.';
+    if(!Number.isInteger(p.n) || p.n<PUNTOS_MIN || p.n>PUNTOS_MAX) return `El número de puntos debe ser un entero entre ${PUNTOS_MIN} y ${PUNTOS_MAX}.`;
+    if(!ESCALAS.includes(p.escala)) return 'La escala debe ser logarítmica o lineal.';
+    return null;
+  }
+  // N frecuencias de f0 a f1: en progresión geométrica (escala log) o aritmética (lineal)
+  function frecuencias(p){
+    const lista=[];
+    for(let k=0;k<p.n;k++){
+      const u=k/(p.n-1);
+      lista.push(p.escala==='log' ? p.f0*Math.pow(p.f1/p.f0, u) : p.f0+(p.f1-p.f0)*u);
+    }
+    return lista;
+  }
+  /* Ejecuta el barrido. magnitudes = [{clave, nombre, unidad:'V'|'A', elemento, signo}]:
+     la tensión (V) o la corriente (A) del elemento del motor `elemento`; signo −1 invierte el
+     sentido (la corriente que ENTREGA una fuente es −i del motor). */
+  function ejecutar(circuito, idFuente, magnitudes, p, opciones){
+    const error=validar(p);
+    if(error) return {ok:false, error};
+    const filas=[];
+    let amplitud=null, avisos=[];
+    for(const f of frecuencias(p)){
+      const r=MotorMNA.resolverAC(circuito, f, Object.assign({referenciaVirtual:true}, opciones||{}, {fuente:idFuente}));
+      if(!r.ok) return {ok:false, error:`A ${fmt(f,'Hz')} el circuito no tiene solución: ${r.errores.join(' ')}`, filas};
+      amplitud=r.amplitud; avisos=r.avisos||[];
+      const y={};
+      magnitudes.forEach(m=>{
+        const z=(m.unidad==='A' ? r.i : r.vElem)[m.elemento];
+        y[m.clave] = z ? {amp:Math.hypot(z.re, z.im), fase:envolver(grados(z)+(m.signo<0 ? 180 : 0))} : {amp:NaN, fase:NaN};
+      });
+      filas.push({f, y});
+    }
+    return {ok:true, p:Object.assign({}, p), fuente:idFuente, amplitud, avisos,
+            magnitudes:magnitudes.map(m=>Object.assign({}, m)), filas};
+  }
+  /* Pico, frecuencias de corte, ancho de banda y Q de la magnitud `clave`.
+     Se trabaja en la abscisa del barrido (log f o f), donde los puntos están igualmente
+     espaciados: el vértice de la parábola por (−1, a), (0, b), (1, c) está en
+     u = (a − c) / (2·(a − 2b + c)) y vale b − (a − c)·u/4. */
+  function analizar(res, clave){
+    const fs=res.filas.map(r=>r.f), am=res.filas.map(r=>r.y[clave].amp), fa=res.filas.map(r=>r.y[clave].fase), n=fs.length;
+    const log=res.p.escala==='log', X=f=>(log ? Math.log(f) : f), Xinv=x=>(log ? Math.exp(x) : x);
+    const entre=(a, b, u)=>Xinv(X(fs[a])+u*(X(fs[b])-X(fs[a])));
+    const vertice=(k, signo)=>{            // signo +1: máximo; −1: mínimo
+      const interior=k>0 && k<n-1, d=interior ? am[k-1]-2*am[k]+am[k+1] : 0;
+      if(!interior || !(signo*d<0)) return {f:fs[k], amp:am[k], interior};
+      const u=0.5*(am[k-1]-am[k+1])/d;
+      return {f:entre(k, k+1, u), amp:am[k]-0.25*(am[k-1]-am[k+1])*u, interior};
+    };
+    let kMax=0, kMin=0;
+    for(let j=1;j<n;j++){ if(am[j]>am[kMax]) kMax=j; if(am[j]<am[kMin]) kMin=j; }
+    const pico=vertice(kMax, 1), minimo=vertice(kMin, -1), nivel=pico.amp*NIVEL_CORTE;
+    const cruce=(a, b)=>entre(a, b, (nivel-am[a])/(am[b]-am[a]));   // donde la amplitud vale `nivel`
+    let bajo=null, alto=null;
+    for(let j=kMax;j>0;j--) if(am[j-1]<nivel){ bajo=cruce(j-1, j); break; }
+    for(let j=kMax;j<n-1;j++) if(am[j+1]<nivel){ alto=cruce(j, j+1); break; }
+    const faseEn=f=>{
+      if(f===null) return null;
+      let j=0; while(j<n-2 && fs[j+1]<f) j++;
+      return envolver(fa[j]+(X(f)-X(fs[j]))/(X(fs[j+1])-X(fs[j]))*envolver(fa[j+1]-fa[j]));
+    };
+    const ancho=(bajo!==null && alto!==null) ? alto-bajo : null;
+    const tipo = ancho!==null ? 'banda' : alto!==null ? 'bajas' : bajo!==null ? 'altas' : 'plana';
+    return {tipo, texto:TIPOS_RESPUESTA[tipo], nivel, pico:Object.assign(pico, {fase:faseEn(pico.f)}),
+            minimo:Object.assign(minimo, {fase:faseEn(minimo.f)}),
+            bajo, alto, faseBajo:faseEn(bajo), faseAlto:faseEn(alto), ancho, Q:(ancho ? pico.f/ancho : null)};
+  }
+
+  function csv(res){
+    const cab=['f (Hz)'];
+    res.magnitudes.forEach(m=>{ cab.push(`${m.nombre}: amplitud (${m.unidad})`); cab.push(`${m.nombre}: fase (°)`); });
+    const filas=[cab];
+    res.filas.forEach(r=>{
+      const fila=[r.f.toPrecision(10)];
+      res.magnitudes.forEach(m=>{ const y=r.y[m.clave]; fila.push(Number.isFinite(y.amp) ? y.amp.toPrecision(10) : ''); fila.push(Number.isFinite(y.fase) ? y.fase.toFixed(4) : ''); });
+      filas.push(fila);
+    });
+    return filas.map(f=>f.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  }
+
+  /* ---------- gráfica (SVG): amplitud arriba y fase abajo, frente a la frecuencia ---------- */
+  // Marcas del eje de frecuencia. Escala log: 1, 2 y 5 de cada década con rótulo y el resto solo retícula.
+  function marcasFrecuencia(f0, f1, log){
+    if(!log) return BarridoTension.marcas(f0, f1, 8).lista.filter(v=>v>=f0*(1-1e-9) && v<=f1*(1+1e-9)).map(v=>({v, rotulo:true}));
+    const lista=[];
+    for(let e=Math.floor(Math.log10(f0)); e<=Math.ceil(Math.log10(f1)); e++)
+      for(let m=1;m<=9;m++){
+        const v=m*Math.pow(10,e);
+        if(v>=f0*(1-1e-9) && v<=f1*(1+1e-9)) lista.push({v, rotulo:m===1 || m===2 || m===5});
+      }
+    return lista;
+  }
+  const numero=x=>String(+x.toPrecision(4)).replace('.',',');
+  function graficaSVG(res, clave, an, opciones){
+    const o=Object.assign({ancho:900, altoAmp:250, altoFase:170}, opciones||{});
+    const mag=res.magnitudes.find(m=>m.clave===clave) || res.magnitudes[0];
+    const fs=res.filas.map(r=>r.f), am=res.filas.map(r=>r.y[mag.clave].amp), fa=res.filas.map(r=>r.y[mag.clave].fase);
+    const log=res.p.escala==='log', T=f=>(log ? Math.log10(f) : f), f0=fs[0], f1=fs[fs.length-1];
+    const izq=72, der=18, arr=34, sep=30, abj=46, pw=o.ancho-izq-der, alto=arr+o.altoAmp+sep+o.altoFase+abj;
+    const X=f=>izq+(T(f)-T(f0))/(T(f1)-T(f0))*pw;
+    const MA=BarridoTension.marcas(0, Math.max(...am), 5), MF=BarridoTension.marcas(Math.min(...fa), Math.max(...fa), 4);
+    const [pf, fac]=PREFIJOS.find(([,q])=>MA.fin>=q*0.9999995) || PREFIJOS[PREFIJOS.length-1];
+    const yA=arr, yF=arr+o.altoAmp+sep;
+    const YA=v=>yA+o.altoAmp-(v-MA.ini)/(MA.fin-MA.ini)*o.altoAmp, YF=v=>yF+o.altoFase-(v-MF.ini)/(MF.fin-MF.ini)*o.altoFase;
+    const C=COLORES, txt=(x,y,t,anc,col)=>`<text x="${x}" y="${y}" fill="${col||C.texto}" font-family="ui-monospace,monospace" font-size="11" text-anchor="${anc||'middle'}">${t}</text>`;
+    const vertical=(t, x, y)=>`<text x="${x}" y="${y}" fill="${C.texto}" font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" transform="rotate(-90 ${x} ${y})">${t}</text>`;
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.ancho} ${alto}" width="100%" role="img" aria-label="Amplitud y fase de ${mag.nombre} frente a la frecuencia">`+
+      `<rect width="${o.ancho}" height="${alto}" fill="${C.fondo}"/>`;
+    marcasFrecuencia(f0, f1, log).forEach(m=>{
+      s+=`<line x1="${X(m.v)}" y1="${yA}" x2="${X(m.v)}" y2="${yA+o.altoAmp}" stroke="${C.reticula}"/>`+
+         `<line x1="${X(m.v)}" y1="${yF}" x2="${X(m.v)}" y2="${yF+o.altoFase}" stroke="${C.reticula}"/>`;
+      if(m.rotulo) s+=txt(X(m.v), yF+o.altoFase+16, fmt(m.v,'Hz',3).replace(' Hz','').replace(' ',''));
+    });
+    MA.lista.forEach(v=>{ s+=`<line x1="${izq}" y1="${YA(v)}" x2="${izq+pw}" y2="${YA(v)}" stroke="${C.reticula}"/>`+txt(izq-7, YA(v)+4, numero(v/fac), 'end'); });
+    MF.lista.forEach(v=>{ s+=`<line x1="${izq}" y1="${YF(v)}" x2="${izq+pw}" y2="${YF(v)}" stroke="${v===0 ? C.eje : C.reticula}"/>`+txt(izq-7, YF(v)+4, numero(v), 'end'); });
+    s+=`<rect x="${izq}" y="${yA}" width="${pw}" height="${o.altoAmp}" fill="none" stroke="${C.eje}"/>`+
+       `<rect x="${izq}" y="${yF}" width="${pw}" height="${o.altoFase}" fill="none" stroke="${C.eje}"/>`;
+    s+=txt(izq+pw/2, alto-8, `frecuencia del generador ${res.fuente} (Hz)${log ? ' · escala logarítmica' : ''}`);
+    s+=vertical(`amplitud (${pf}${mag.unidad})`, 16, yA+o.altoAmp/2)+vertical('fase (°)', 16, yF+o.altoFase/2);
+    // marcas del análisis: nivel de −3 dB, pico y frecuencias de corte
+    if(an){
+      if(an.tipo!=='plana') s+=`<line x1="${izq}" y1="${YA(an.nivel)}" x2="${izq+pw}" y2="${YA(an.nivel)}" stroke="${C.marca}" stroke-dasharray="2 5"/>`+
+        txt(izq+pw-4, YA(an.nivel)-5, 'pico/√2 (−3 dB)', 'end', C.marca);
+      // línea vertical en f; el rótulo va a la izquierda (f1) o a la derecha, y en otro renglón que el de f0
+      const marca=(f, rotulo, izquierda, renglon)=>{
+        if(f===null || f<f0 || f>f1) return '';
+        const lado = izquierda ? X(f)>izq+130 : X(f)>izq+pw-130;
+        return `<line x1="${X(f)}" y1="${yA}" x2="${X(f)}" y2="${yF+o.altoFase}" stroke="${C.marca}" stroke-width="1.4" stroke-dasharray="4 4"/>`+
+               txt(X(f)+(lado ? -4 : 4), yA+13+14*renglon, rotulo, lado ? 'end' : 'start', C.marca);
+      };
+      if(an.pico.interior) s+=marca(an.pico.f, `f0 = ${fmt(an.pico.f,'Hz')}`, false, 0);
+      s+=marca(an.bajo, an.tipo==='altas' ? `fc = ${fmt(an.bajo,'Hz')}` : 'f1', true, 1)+
+         marca(an.alto, an.tipo==='bajas' ? `fc = ${fmt(an.alto,'Hz')}` : 'f2', false, 1);
+    }
+    const trazo=(ys, Y)=>fs.map((f,k)=>`${X(f).toFixed(1)},${Y(ys[k]).toFixed(1)}`).join(' ');
+    s+=`<polyline points="${trazo(am, YA)}" fill="none" stroke="${C.amplitud}" stroke-width="1.8"/>`+
+       `<polyline points="${trazo(fa, YF)}" fill="none" stroke="${C.fase}" stroke-width="1.8"/>`;
+    s+=`<line x1="${izq+4}" y1="${arr-14}" x2="${izq+28}" y2="${arr-14}" stroke="${C.amplitud}" stroke-width="2"/>`+txt(izq+34, arr-10, `amplitud de ${mag.nombre}`, 'start')+
+       `<line x1="${izq+pw/2}" y1="${arr-14}" x2="${izq+pw/2+24}" y2="${arr-14}" stroke="${C.fase}" stroke-width="2"/>`+txt(izq+pw/2+30, arr-10, `fase respecto a ${res.fuente} (amplitud ${fmt(res.amplitud,'V')})`, 'start');
+    return s+'</svg>';
+  }
+
+  return Object.freeze({ F_MIN, F_MAX, PUNTOS_MIN, PUNTOS_MAX, ESCALAS, DEFECTO, NIVEL_CORTE, TIPOS_RESPUESTA,
+    validar, frecuencias, ejecutar, analizar, csv, graficaSVG, marcasFrecuencia });
 })();
 </script>
 
@@ -5134,8 +5565,10 @@ function fijarPosicionPot(k, x, origen){
   redraw();
 }
 // Agrega un componente y muestra la página de la bandeja donde quedó
-function agregarComponente(tipo){
+// ajustar(c) (incr. 12, opcional) cambia el componente recién creado antes de mostrarlo
+function agregarComponente(tipo, ajustar){
   const id = tipo==='R' ? ModeloMontaje.crearResistencia(st.res, rnd()) : ModeloMontaje.crearComponente(st.res, tipo);
+  if(ajustar) ajustar(st.res[id]);
   const sueltos=Object.keys(st.res).filter(k=>!st.res[k].a);
   st.trayPag=Math.floor(sueltos.indexOf(id)/TRAY_POR_PAGINA);
   if(tipo==='R') buildRPanel(); else buildCompPanel();
@@ -5148,6 +5581,11 @@ L('addC').onclick=()=>agregarComponente('C');
 L('addL').onclick=()=>agregarComponente('L');
 L('addPOT').onclick=()=>agregarComponente('POT');   // [incr. 10]
 L('addVM').onclick=()=>agregarComponente('VM');
+// [incr. 12] Fuente DC adicional (sin límite): un generador en forma «DC» con la r interna de las fuentes del banco
+L('addDC').onclick=()=>agregarComponente('GEN', g=>{
+  g.valor=ModeloMontaje.FUENTE_DC_NUEVA.rInterna;
+  g.forma=Object.assign({}, ModeloMontaje.FORMA_DEFECTO, {tipo:'dc', dc:ModeloMontaje.FUENTE_DC_NUEVA.tension});
+});
 L('addAM').onclick=()=>agregarComponente('AM');
 L('addGEN').onclick=()=>agregarComponente('GEN');
 L('addCH').onclick=()=>{ agregarComponente('CH'); PanelOsciloscopio.construirControles(); };
@@ -5190,6 +5628,15 @@ function cargarEjemploDosMallas(){
   msg(ModeloMontaje.EJEMPLO_DOS_MALLAS.titulo);
 }
 L('ejemploDosMallas').onclick=cargarEjemploDosMallas;
+// [incr. 12] RLC paralelo en resonancia: configura el osciloscopio y ejecuta el barrido de frecuencia
+function cargarEjemploRlcParalelo(){
+  const E=ModeloMontaje.construirEjemploRlcParalelo(st);
+  buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw();
+  PanelOsciloscopio.configurar(E.osciloscopio);
+  PanelFrecuencia.preparar(E.barrido, E.magnitud);
+  msg(E.titulo);
+}
+L('ejemploRlcParalelo').onclick=cargarEjemploRlcParalelo;
 L('ejemploPotDivisor').onclick=()=>cargarEjemploPot('divisor');
 L('ejemploPotMaxima').onclick=()=>cargarEjemploPot('maxima');
 buildCompPanel();
@@ -5991,6 +6438,174 @@ const PanelBarrido = (function(){
 })();
 </script>
 
+<script id="ui-frecuencia">
+/* ============================================================
+   AMPLIACIÓN · (j) BARRIDO DE FRECUENCIA: INTERFAZ (incremento 12)
+   Toma el montaje del protoboard con las mismas funciones que el
+   osciloscopio (buildNet y ModeloMontaje.netlist) y lo recorre en
+   frecuencia con BarridoFrecuencia (código puro). El generador elegido
+   es la excitación: una senoidal de su amplitud; las demás fuentes no
+   aportan a esa frecuencia (superposición). No cambia el montaje.
+   ============================================================ */
+const PanelFrecuencia = (function(){
+  'use strict';
+  const B=BarridoFrecuencia, M=ModeloMontaje;
+  const fmt=(x,u,c)=>M.formatoValor(x,u,c||4);
+  const grad=x=>(x===null || !Number.isFinite(x)) ? '—' : String(+x.toFixed(2)).replace('.',',')+'°';
+  const cfg=Object.assign({}, B.DEFECTO, {generador:null, eje:null});
+  let ultimo=null, analisis=null;
+
+  // Generadores colocados que pueden barrerse (en forma DC no tienen frecuencia)
+  const generadores=()=>Object.keys(st.res).filter(k=>M.esGenerador(st.res[k]) && st.res[k].a && st.res[k].b && st.res[k].forma.tipo!=='dc');
+  function circuito(){ const red=buildNet(false); return M.netlist(red.els, red.srcs, red.reac, [], {transitorio:true}); }
+  // Lo que se registra en cada frecuencia: corriente del generador, sondas y medidores agregados,
+  // y la tensión y la corriente de cada R, C y L colocado
+  function magnitudes(gen, circ){
+    const lista=[{clave:'IG', nombre:`I que entrega ${gen}`, unidad:'A', elemento:gen, signo:-1}];   // el motor da i < 0 en una fuente que entrega
+    Object.keys(st.res).forEach(k=>{
+      const c=st.res[k], t=M.tipoDe(c);
+      if(!c.a || !c.b) return;
+      if(t==='CH' || t==='VM') lista.push({clave:k, nombre:k, unidad:'V', elemento:k, signo:1});
+      else if(t==='AM') lista.push({clave:k, nombre:k, unidad:'A', elemento:k, signo:1});
+      else if(t==='R' || t==='C' || t==='L'){
+        const e=circ.elementos.find(x=>x.id===k || x.id.endsWith(':R:'+k));    // las R llegan del base como «b<n>:R:<id>»
+        if(!e) return;
+        lista.push({clave:'v:'+k, nombre:`v de ${k}`, unidad:'V', elemento:e.id, signo:1});
+        lista.push({clave:'i:'+k, nombre:`i de ${k}`, unidad:'A', elemento:e.id, signo:1});
+      }
+    });
+    return lista;
+  }
+  function barrer(p){
+    const circ=circuito();
+    return B.ejecutar(circ, p.generador, magnitudes(p.generador, circ), p);
+  }
+
+  /* ---------- controles ---------- */
+  function estado(html){ L('frEstado').innerHTML=html; }
+  function construirControles(){
+    const num=(id, valor, ancho)=>`<input type="number" id="${id}" value="${valor}" step="any" style="width:${ancho}px">`;
+    L('frCtrls').innerHTML=
+      `<div class="grp"><label for="frGen">Generador</label><select id="frGen"></select></div>`+
+      `<div class="grp"><label for="frF0">f inicial</label><div class="vf">${num('frF0', cfg.f0, 84)}<span class="u">Hz</span></div></div>`+
+      `<div class="grp"><label for="frF1">f final</label><div class="vf">${num('frF1', cfg.f1, 84)}<span class="u">Hz</span></div></div>`+
+      `<div class="grp"><label for="frN">Puntos</label><div class="vf">${num('frN', cfg.n, 64)}</div></div>`+
+      `<div class="grp"><label for="frEsc">Escala de f</label><select id="frEsc"><option value="log">logarítmica</option><option value="lineal">lineal</option></select></div>`+
+      `<div class="grp"><label for="frEje">Magnitud de la gráfica</label><select id="frEje"><option value="">—</option></select></div>`+
+      `<div class="grp"><label>&nbsp;</label><div class="btnrow">
+         <button class="mini on" id="frRun">Ejecutar barrido</button>
+         <button class="mini" id="frCsv">CSV</button>
+         <button class="mini" id="frSvg">Capturar SVG</button>
+         <button class="mini" id="frLog">Anotar en el registro</button></div></div>`;
+    L('frEsc').value=cfg.escala;
+    llenarGeneradores();
+    ['frGen','frF0','frF1','frN','frEsc'].forEach(id=>{ L(id).onchange=leer; });
+    L('frCtrls').onmouseenter=llenarGeneradores;       // el montaje pudo cambiar desde la última vez
+    L('frEje').onchange=()=>{ cfg.eje=L('frEje').value; if(ultimo){ analisis=B.analizar(ultimo, cfg.eje); dibujar(); tablas(); } };
+    L('frRun').onclick=ejecutar;
+    L('frCsv').onclick=()=>{ if(sinBarrido()) return; download(nombreArchivo('csv'), B.csv(ultimo), 'text/csv;charset=utf-8'); };
+    L('frSvg').onclick=()=>{ if(sinBarrido()) return; download(nombreArchivo('svg'), B.graficaSVG(ultimo, cfg.eje, analisis), 'image/svg+xml'); };
+    L('frLog').onclick=anotar;
+  }
+  function llenarGeneradores(){
+    const gs=generadores(), sel=L('frGen'), antes=[...sel.options].map(o=>o.value).join(',');
+    if(!gs.includes(cfg.generador)) cfg.generador=gs[0]||null;
+    if(antes===gs.join(',') && gs.length) return;       // sin cambios: no se toca la lista (puede estar abierta)
+    sel.innerHTML = gs.length ? gs.map(k=>`<option value="${k}"${k===cfg.generador?' selected':''}>${k}</option>`).join('')
+                              : '<option value="">(no hay generador colocado)</option>';
+  }
+  function leer(){
+    cfg.generador=L('frGen').value||null;
+    cfg.f0=parseFloat(L('frF0').value); cfg.f1=parseFloat(L('frF1').value); cfg.n=Number(L('frN').value); cfg.escala=L('frEsc').value;
+    const error=B.validar(cfg);
+    if(error) estado(`<div class="bad">✖ ${error}</div>`);
+    return !error;
+  }
+  function llenarEje(){
+    const claves=ultimo.magnitudes.map(m=>m.clave);
+    // por defecto: una sonda que no sea la primera (CH1 suele estar en el generador), un medidor o la corriente del generador
+    if(!claves.includes(cfg.eje))
+      cfg.eje=claves.find(k=>/^CH/.test(k) && k!=='CH1') || claves.find(k=>/^(CH|VM|AM)/.test(k)) || 'IG';
+    L('frEje').innerHTML=ultimo.magnitudes.map(m=>`<option value="${m.clave}"${m.clave===cfg.eje?' selected':''}>${m.nombre} (${m.unidad})</option>`).join('');
+  }
+  const sinBarrido=()=>{ if(ultimo) return false; msg('Primero ejecuta un barrido de frecuencia'); return true; };
+  const nombreArchivo=ext=>`barrido_frecuencia_${ultimo.fuente}_${ultimo.p.f0}-${ultimo.p.f1}Hz.${ext}`;
+
+  function limpiar(){
+    ultimo=null; analisis=null;
+    L('frGrafica').innerHTML=''; L('frEje').innerHTML='<option value="">—</option>';
+    L('frAnalisis').innerHTML=L('frTabla').innerHTML='<p class="empty">Sin barrido.</p>';
+  }
+  function ejecutar(){
+    llenarGeneradores();
+    if(!leer()) return;
+    if(!cfg.generador){ limpiar(); estado('<div class="bad">✖ No hay un generador colocado en el protoboard (en forma seno, cuadrada o triangular). Agrégalo con «+ Generador» o carga un ejemplo con generador.</div>'); return; }
+    const t0=performance.now(), res=barrer(cfg), ms=performance.now()-t0;
+    if(!res.ok){ limpiar(); estado(`<div class="bad">✖ ${res.error}</div>`); return; }
+    ultimo=res; llenarEje(); analisis=B.analizar(res, cfg.eje);
+    dibujar(); tablas();
+    const g=st.res[cfg.generador].forma, avisos=[];
+    if(g.tipo!=='seno') avisos.push(`${cfg.generador} está en forma ${g.tipo}: el barrido usa una senoidal de su amplitud (${fmt(g.amplitud,'V')}).`);
+    estado(`Barrido de ${cfg.generador}: ${res.filas.length} puntos de ${fmt(cfg.f0,'Hz')} a ${fmt(cfg.f1,'Hz')} · amplitud ${fmt(res.amplitud,'V')} · `+
+      `${res.magnitudes.length} magnitudes · ${ms.toFixed(0)} ms`+avisos.map(a=>`<div class="warn">⚠ ${a}</div>`).join(''));
+  }
+  function dibujar(){ L('frGrafica').innerHTML=B.graficaSVG(ultimo, cfg.eje, analisis); }
+  function tablas(){
+    const r=ultimo, a=analisis, mag=r.magnitudes.find(m=>m.clave===cfg.eje), u=mag.unidad;
+    const fila=(nombre, valor, nota)=>`<tr><td>${nombre}</td><td class="n">${valor}</td><td class="msg">${nota||''}</td></tr>`;
+    let h=`<table class="cmp"><thead><tr><th>${mag.nombre}</th><th style="text-align:right">Valor</th><th>Qué significa</th></tr></thead><tbody>`+
+      fila('Tipo de respuesta', a.texto, a.tipo==='banda' ? 'la amplitud tiene un máximo y cae a ambos lados' :
+        a.tipo==='bajas' ? 'deja pasar las frecuencias bajas' : a.tipo==='altas' ? 'deja pasar las frecuencias altas' : 'la amplitud no baja a pico/√2 en este intervalo')+
+      fila(a.pico.interior ? 'Frecuencia del pico f<sub>0</sub>' : 'Máximo (en un extremo del barrido)', fmt(a.pico.f,'Hz',5), a.pico.interior ? 'frecuencia de resonancia' : '')+
+      fila('Amplitud en el pico', fmt(a.pico.amp,u,5), `con el generador en ${fmt(r.amplitud,'V')}`)+
+      fila('Fase en el pico', grad(a.pico.fase), 'respecto al generador');
+    if(a.bajo!==null) h+=fila(a.tipo==='altas' ? 'Frecuencia de corte f<sub>c</sub>' : 'Corte inferior f<sub>1</sub>', fmt(a.bajo,'Hz',5), `amplitud = pico/√2 (−3 dB) · fase ${grad(a.faseBajo)}`);
+    if(a.alto!==null) h+=fila(a.tipo==='bajas' ? 'Frecuencia de corte f<sub>c</sub>' : 'Corte superior f<sub>2</sub>', fmt(a.alto,'Hz',5), `amplitud = pico/√2 (−3 dB) · fase ${grad(a.faseAlto)}`);
+    if(a.ancho!==null) h+=fila('Ancho de banda f<sub>2</sub> − f<sub>1</sub>', fmt(a.ancho,'Hz',5), '')+
+      fila('Factor de calidad Q = f<sub>0</sub>/(f<sub>2</sub> − f<sub>1</sub>)', String(+a.Q.toPrecision(5)).replace('.',','), 'resonancia más aguda cuanto mayor es Q');
+    if(a.minimo.interior) h+=fila('Mínimo', `${fmt(a.minimo.amp,u,5)} en ${fmt(a.minimo.f,'Hz',5)}`, 'antirresonancia: la amplitud pasa por un mínimo');
+    L('frAnalisis').innerHTML=h+'</tbody></table>';
+    L('frTabla').innerHTML=`<table class="cmp"><thead><tr><th>f</th><th>${mag.nombre}: amplitud</th><th>fase</th><th>I de ${r.fuente}: amplitud</th><th>fase</th></tr></thead><tbody>`+
+      r.filas.map(f=>`<tr><td class="n">${fmt(f.f,'Hz',5)}</td><td class="n">${fmt(f.y[mag.clave].amp,u,5)}</td><td class="n">${grad(f.y[mag.clave].fase)}</td>`+
+        `<td class="n">${fmt(f.y.IG.amp,'A',5)}</td><td class="n">${grad(f.y.IG.fase)}</td></tr>`).join('')+'</tbody></table>';
+  }
+  function anotar(){
+    if(sinBarrido()) return;
+    const a=analisis, mag=ultimo.magnitudes.find(m=>m.clave===cfg.eje), hora=new Date().toLocaleTimeString('es-CO',{hour12:false});
+    const rango=`${fmt(ultimo.p.f0,'Hz')}–${fmt(ultimo.p.f1,'Hz')}`;
+    const txt = a.tipo==='banda' ? `pico ${fmt(a.pico.amp,mag.unidad)} en f0 = ${fmt(a.pico.f,'Hz')}, ancho de banda ${fmt(a.ancho,'Hz')}, Q = ${String(+a.Q.toPrecision(4)).replace('.',',')}`
+      : a.tipo==='plana' ? `máximo ${fmt(a.pico.amp,mag.unidad)} en ${fmt(a.pico.f,'Hz')}, sin corte en el intervalo`
+      : `${a.texto}, f_c = ${fmt(a.tipo==='bajas' ? a.alto : a.bajo,'Hz')}`;
+    st.log.push({t:hora, inst:mag.nombre, val:`barrido de frecuencia de ${ultimo.fuente} ${rango}: ${txt}`});
+    renderLog(); msg('Resultado del barrido anotado en el registro de medidas');
+  }
+  // Deja listo (y ejecuta) el barrido de un ejemplo: intervalo y magnitud de la gráfica
+  function preparar(p, eje){
+    Object.assign(cfg, p, {eje:eje||null, generador:null});
+    construirControles(); L('cardFrecuencia').open=true;
+    ejecutar();
+  }
+
+  /* ---------- pruebas (incr. 12): análisis fasorial, barrido y RLC paralelo en el protoboard ---------- */
+  function pruebas(){
+    const filas=PruebasMotor.pruebaRespuestaFrecuencia();
+    const copia=JSON.stringify({wires:st.wires, wid:st.wid, ideal:st.ideal,
+      res:Object.fromEntries(Object.entries(st.res).map(([k,r])=>[k,Object.assign({}, r, r.bands?{bands:r.bands.slice()}:{})])),
+      srcs:st.srcs.map(s=>({V:s.V,on:s.on}))});
+    try{ return filas.concat(PruebasMotor.pruebaRlcParaleloMontaje({st, buildNet})); }
+    finally{        // restaura el montaje del usuario
+      const d=JSON.parse(copia);
+      st.wires=d.wires; st.wid=d.wid; st.ideal=d.ideal; st.res=d.res;
+      d.srcs.forEach((s,i)=>Object.assign(st.srcs[i], s));
+      buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw();
+    }
+  }
+
+  construirControles();
+  return Object.freeze({ ejecutar, barrer, magnitudes, preparar, pruebas, construirControles, ultimo:()=>ultimo, analisis:()=>analisis });
+})();
+</script>
+
 <script id="ui-temporal">
 "use strict";
 /* ====================================================================
@@ -6510,6 +7125,7 @@ const BancoTransitorios = (function(){
       const reg=regresionEjemplos();
       const p5=pruebaP5EnProtoboard();
       const dm=pruebaDosMallasEnProtoboard();          // [incr. 11] dos mallas, 3 puentes y 2 R
+      const fr=PanelFrecuencia.pruebas();              // [incr. 12] régimen senoidal, barrido de frecuencia y RLC paralelo
       const osc=pruebaOscEnProtoboard();
       const ida=pruebaIdaVueltaEnProtoboard();
       const bar=PanelBarrido.pruebas();        // [incr. 9] fuente variable: barrido de tensión
@@ -6550,9 +7166,14 @@ const BancoTransitorios = (function(){
       bar.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${f.error===null?'—':formatoPct(f.error)}</td><td>${f.criterio}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
       h+=`<tr class="g"><td colspan="6">Potenciómetro (incremento 10): modelo, óhmetro, divisor y efecto de carga, máxima transferencia de potencia, avisos y colocación</td></tr>`;
       pot.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${f.error===null?'—':formatoPct(f.error)}</td><td>${f.criterio}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
+      h+=`<tr class="g"><td colspan="6">Régimen senoidal y barrido de frecuencia (incremento 12): análisis fasorial frente a la teoría y al transitorio, resonancia, filtros y RLC paralelo en el protoboard</td></tr>`;
+      fr.forEach(f=>{
+        const err = f.error===null ? '—' : (f.unidadError==='°' ? formatoIng(f.error,'°',3) : formatoPct(f.error));
+        h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${err}</td><td>${f.error===null ? '' : (f.unidadError==='°' ? '&lt; 0,5°' : '&lt; 1 %')}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`;
+      });
       h+=`</tbody></table><p class="hint">Mismas pruebas que <code>node pruebas/ejecutar_pruebas.js</code>, más las del barrido de tensión (incremento 9) y las del potenciómetro (incremento 10), que solo corren en el navegador. La regresión pone las resistencias en su valor nominal, compara con las lecturas del simulador original y restaura tu montaje al terminar.</p></div>`;
       L('bancoPruebas').innerHTML=h;
-      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${dm.filter(f=>f.pasa).length}/${dm.length} de dos mallas con 3 puentes, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos, ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión y ${pot.filter(f=>f.pasa).length}/${pot.length} del potenciómetro cumplen.`);
+      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${dm.filter(f=>f.pasa).length}/${dm.length} de dos mallas con 3 puentes, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos, ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión, ${pot.filter(f=>f.pasa).length}/${pot.length} del potenciómetro y ${fr.filter(f=>f.pasa).length}/${fr.length} del barrido de frecuencia cumplen.`);
     }, 30);
   }
 

@@ -1,9 +1,9 @@
-# Resultados de las pruebas del motor — incrementos 1 a 11
+# Resultados de las pruebas del motor — incrementos 1 a 12
 
-Generado automáticamente por `pruebas/ejecutar_pruebas.js` el 2026-11-12T22:31:25.319Z con Node v22.21.1.
+Generado automáticamente por `pruebas/ejecutar_pruebas.js` el 2026-11-12T22:57:40.816Z con Node v22.21.1.
 Todos los valores "motor" son **calculados por el motor** (no son medidas de laboratorio). Los valores "teórico" son la **solución analítica de referencia**.
 
-**Resumen:** pruebas del motor 308/308 · regresión del base 96/96 · protocolo P1–P5 99/99 · rendimiento cumple · tiempo 2037 ms
+**Resumen:** pruebas del motor 308/308 · regresión del base 143/143 · protocolo P1–P5 99/99 · rendimiento cumple · tiempo 2226 ms
 
 ## A. Motor frente a la teoría
 
@@ -455,8 +455,8 @@ Todos los valores "motor" son **calculados por el motor** (no son medidas de lab
 | Magnitud | Motor | Teórico | Unidad | Error | Criterio | ¿Cumple? |
 |---|---|---|---|---|---|---|
 | 300 C y L: ids únicos y JSON de ida y vuelta | 300 | 300 |  | — |  | ✅ |
-| escalera de 401 elementos: punto de operación DC (ms) | 21 | resuelve |  | — | tiempo informativo | ✅ |
-| escalera de 401 elementos: 10000 pasos trapezoidales (ms) | 1336 | resuelve |  | — | tiempo informativo (RNF-06) | ✅ |
+| escalera de 401 elementos: punto de operación DC (ms) | 30 | resuelve |  | — | tiempo informativo | ✅ |
+| escalera de 401 elementos: 10000 pasos trapezoidales (ms) | 1347 | resuelve |  | — | tiempo informativo (RNF-06) | ✅ |
 
 ### P5 dos mallas, dos fuentes (V1 = 12 V, V2 = 5 V, R1 = 1 kΩ, R2 = 2,2 kΩ, R3 = 3,3 kΩ) · DC
 
@@ -632,6 +632,63 @@ Valores dorados: lecturas sin ruido del simulador **original** en los 4 ejemplos
 | KVL malla 2 con las lecturas: \|VM1 − VM2\| / V (%) | 0,00363187932336 | 0 | 0,00363188 | ✅ |
 | balance con las lecturas: \|V·I1 − Σ R·I²\| / Σ R·I² (%) | 0,0911149117001 | 0 | 0,0911149 | ✅ |
 
+### Régimen senoidal y barrido de frecuencia: análisis fasorial, resonancia y filtros (simulador final) · error en % o en °
+
+| Prueba | Obtenido | Esperado | Error | ¿Cumple? |
+|---|---|---|---|---|
+| fasorial · RC en f_c: \|v_C\| / V = 1/√2 | 0,707106781187 | 0,707106781187 | 0 | ✅ |
+| fasorial · RC en f_c: fase de v_C (°) | -45 | -45 | 0 | ✅ |
+| fasorial · RC en f_c: \|i\| = V/(√2·R) (A) | 0,000707106781187 | 0,000707106781187 | 0 | ✅ |
+| fasorial · RC en f_c: fase de i (°) | 45 | 45 | 0 | ✅ |
+| fasorial · RLC serie en f0: \|i\| = V/R (A) | 0,05 | 0,05 | 0 | ✅ |
+| fasorial · RLC serie en f0: fase de i (°) | 0 | 0 | 0 | ✅ |
+| fasorial · RLC serie en f0: \|v_C\| = Q·V (V) | 5 | 5 | 0 | ✅ |
+| fasorial · RLC serie en f0: fase de v_C (°) | -90 | -90 | 0 | ✅ |
+| fasorial · RLC serie en f0: \|v_L\| = Q·V (V) | 5 | 5 | 0 | ✅ |
+| fasorial · RLC serie en f0: fase de v_L (°) | 90 | 90 | 0 | ✅ |
+| RLC serie a 1200 Hz · \|v_C\|: fasorial frente al transitorio (V) | 2,18770134158 | 2,1877940318 | 0,0042367 | ✅ |
+| RLC serie a 1200 Hz · fase de v_C: fasorial frente al transitorio (°) | -19,2625597549 | -19,2637869403 | 0,00122719 | ✅ |
+| RLC serie a 1200 Hz · \|i\|: fasorial frente al transitorio (A) | 0,0164948795111 | 0,0164958904714 | 0,00612856 | ✅ |
+| RLC serie a 1200 Hz · fase de i: fasorial frente al transitorio (°) | 70,7374402451 | 70,7362130593 | 0,00122719 | ✅ |
+| barrido RLC serie (corriente): respuesta pasa-banda con el pico dentro del intervalo | banda interior | banda interior | — | ✅ |
+| barrido RLC serie: frecuencia del pico = f0 = 1/(2π√(LC)) (Hz) | 1591,54651377 | 1591,54943092 | 1,8329e-4 | ✅ |
+| barrido RLC serie: corriente en el pico = V/R (A) | 0,0499999882401 | 0,05 | 2,3520e-5 | ✅ |
+| barrido RLC serie: fase de la corriente en el pico (°) | 0,00136324809932 | 0 | 0,00136325 | ✅ |
+| barrido RLC serie: ancho de banda f2 − f1 = R/(2πL) (Hz) | 318,365395292 | 318,309886184 | 0,0174387 | ✅ |
+| barrido RLC serie: Q = f0/(f2 − f1) = √(L/C)/R | 4,99911905412 | 5 | 0,0176189 | ✅ |
+| barrido RLC serie: fase en el corte inferior f1 (°) | 44,9962539358 | 45 | 0,00374606 | ✅ |
+| barrido RLC serie: fase en el corte superior f2 (°) | -44,9940360734 | -45 | 0,00596393 | ✅ |
+| barrido RLC serie en escala lineal: frecuencia del pico (Hz) | 1591,55431042 | 1591,54943092 | 3,0659e-4 | ✅ |
+| barrido RC: v_C es pasa-bajas y v_R es pasa-altas | bajas / altas | bajas / altas | — | ✅ |
+| barrido RC: frecuencia de corte de v_C = 1/(2πRC) (Hz) | 159,155822085 | 159,154943092 | 5,5229e-4 | ✅ |
+| barrido RC: fase de v_C en el corte (°) | -45,0001654172 | -45 | 1,6542e-4 | ✅ |
+| barrido RC: frecuencia de corte de v_R = 1/(2πRC) (Hz) | 159,155767983 | 159,154943092 | 5,1829e-4 | ✅ |
+| barrido RC: fase de v_R en el corte (°) | 44,9998443206 | 45 | 1,5568e-4 | ✅ |
+| frecuencia 0 Hz: mensaje de error | La frecuencia debe ser un número mayor que 0 Hz. | error | — | ✅ |
+| fuente de excitación inexistente: mensaje de error | No hay una fuente de tensión llamada "X9" conectada al circuito. | error | — | ✅ |
+| dos fuentes de tensión en paralelo: sistema singular con mensaje | Sistema singular en régimen senoidal a 159.15494309189535 Hz: una malla formada solo por fuentes de tensión e inductores ideales no tiene solución única. | error | — | ✅ |
+| barrido con f final ≤ f inicial: se rechaza | La frecuencia final debe ser mayor que la inicial. | mensaje | — | ✅ |
+
+### RLC paralelo en el protoboard: fasorial frente a la teoría del montaje y al osciloscopio (simulador final) · error en % o en °
+
+| Prueba | Obtenido | Esperado | Error | ¿Cumple? |
+|---|---|---|---|---|
+| RLC paralelo en f0: \|CH1\| en bornes del generador (V) | 0,975503990071 | 0,97555027727 | 0,00474473 | ✅ |
+| RLC paralelo en f0: \|CH2\| = tensión del tanque (V) | 0,48651115154 | 0,487531372949 | 0,209263 | ✅ |
+| RLC paralelo en f0: fase de CH2 (el tanque es resistivo: ≈ 0°) (°) | 0,000568985531603 | 0 | 5,6899e-4 | ✅ |
+| RLC paralelo en f0: \|i_L\| = \|v\|/(ωL) (A) | 0,00486550150303 | 0,00487531372949 | 0,201263 | ✅ |
+| RLC paralelo en f0: fase de i_L (atrasa 90°) (°) | -89,9765136215 | -90 | 0,0234864 | ✅ |
+| RLC paralelo en f0: \|i_C\| = \|v\|·ωC (A) | 0,00486530631456 | 0,00487531372949 | 0,205267 | ✅ |
+| RLC paralelo en f0: fase de i_C (adelanta 90°) (°) | 90,0005689855 | 90 | 5,6899e-4 | ✅ |
+| RLC paralelo en f0: corriente que entrega el generador (A) | 0,000489920854629 | 0,000488994454599 | 0,18945 | ✅ |
+| RLC paralelo en f0: \|i_L\| / \|i_generador\| (la corriente circula dentro del tanque) | 9,93119900299 | 9,97007979055 | 0,389975 | ✅ |
+| barrido del RLC paralelo (CH2): respuesta pasa-banda con el pico dentro del intervalo | banda interior | banda interior | — | ✅ |
+| barrido del RLC paralelo: frecuencia del pico = f0 (Hz) | 1591,35536164 | 1591,54943092 | 0,0121937 | ✅ |
+| barrido del RLC paralelo: Q = f0/(f2 − f1) = R_eq·√(C/L) | 5,09758371525 | 5,11932318165 | 0,424655 | ✅ |
+| RLC paralelo · osciloscopio frente al fasorial: \|CH2\| (V) | 0,486504335698 | 0,48651115154 | 0,00140096 | ✅ |
+| RLC paralelo · osciloscopio frente al fasorial: \|CH2\|/\|CH1\| | 0,498727228461 | 0,498727997519 | 1,5420e-4 | ✅ |
+| RLC paralelo · osciloscopio frente al fasorial: fase de CH2 respecto a CH1 (°) | -0,018859354976 | 0,0000112009769145 | 0,0188706 | ✅ |
+
 ### Osciloscopio sobre montajes del protoboard (simulador final) · error en % o en °
 
 | Prueba | Obtenido | Esperado | Error | ¿Cumple? |
@@ -698,4 +755,4 @@ Bloques de primer nivel del `<script>` del base: **83 sin cambios**, **20 modifi
 
 ## D. Protocolo de validación P1–P5 (incremento 8)
 
-99/99 magnitudes de los 11 montajes del protocolo cumplen el criterio frente a la teoría del montaje. Tablas completas, con la teoría ideal y las capturas: `resultados/validacion.md`. Rendimiento: 301 elementos × 20000 pasos en 4,00 s (límite 10 s).
+99/99 magnitudes de los 11 montajes del protocolo cumplen el criterio frente a la teoría del montaje. Tablas completas, con la teoría ideal y las capturas: `resultados/validacion.md`. Rendimiento: 301 elementos × 20000 pasos en 5,51 s (límite 10 s).

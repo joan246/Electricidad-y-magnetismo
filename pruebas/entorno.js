@@ -82,11 +82,11 @@ function cargarEntorno() {
   const html = leer(ARCHIVO_V1), htmlBase = leer(ARCHIVO_BASE);
   // Los bloques puros se cargan EN EL ORDEN EN QUE APARECEN EN EL HTML, igual que en el navegador:
   // si un bloque usara otro que todavía no se definió, fallaría aquí también.
-  const ids = ['motor-mna', 'modelo-montaje', 'osciloscopio-logica', 'pruebas-motor', 'validacion-protocolo']
+  const ids = ['motor-mna', 'modelo-montaje', 'osciloscopio-logica', 'pruebas-motor', 'validacion-protocolo', 'frecuencia-logica']
     .sort((x, y) => html.indexOf(`<script id="${x}">`) - html.indexOf(`<script id="${y}">`));
   const puro = vm.createContext({ console, Math });
   vm.runInContext(ids.map(id => scriptPorId(html, id)).join('\n') +
-    '\nglobalThis.MotorMNA = MotorMNA; globalThis.ModeloMontaje = ModeloMontaje; globalThis.Osciloscopio = Osciloscopio; globalThis.PruebasMotor = PruebasMotor; globalThis.ValidacionProtocolo = ValidacionProtocolo;', puro);
+    '\nglobalThis.MotorMNA = MotorMNA; globalThis.ModeloMontaje = ModeloMontaje; globalThis.Osciloscopio = Osciloscopio; globalThis.PruebasMotor = PruebasMotor; globalThis.ValidacionProtocolo = ValidacionProtocolo; globalThis.BarridoFrecuencia = BarridoFrecuencia;', puro);
   const codigoBaseOriginal = scriptBase(htmlBase), codigoBaseEnV1 = scriptBase(html);
   const BO = cargarBase(codigoBaseOriginal);
   const BV = cargarBase(codigoBaseEnV1, scriptPorId(html, 'motor-mna') + '\n' + scriptPorId(html, 'modelo-montaje'));

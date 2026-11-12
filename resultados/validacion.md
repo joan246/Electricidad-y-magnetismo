@@ -1,6 +1,6 @@
 # Protocolo de validación P1–P5 sobre los montajes del protoboard
 
-Generado por `pruebas/ejecutar_pruebas.js` el 2026-11-12T22:31:25.307Z con Node v22.21.1 (4816 ms). Cada fila compara un valor **calculado por el motor** sobre el montaje de `ejemplos/<id>.json` (medido como en el laboratorio: instante fijo, 63,2 %, picos, cruces, fasores por DFT o lectura de un medidor) con dos referencias analíticas:
+Generado por `pruebas/ejecutar_pruebas.js` el 2026-11-12T22:57:40.802Z con Node v22.21.1 (7333 ms). Cada fila compara un valor **calculado por el motor** sobre el montaje de `ejemplos/<id>.json` (medido como en el laboratorio: instante fijo, 63,2 %, picos, cruces, fasores por DFT o lectura de un medidor) con dos referencias analíticas:
 
 * **Teoría del montaje**: fórmulas cerradas que incluyen la r interna de las fuentes (0,5 Ω), la r_int del generador (50 Ω), los cables (0,02 Ω), los shunts (0,1 Ω) y la carga de sondas (1 MΩ) y voltímetros (10 MΩ). **El criterio se aplica contra esta teoría**: 1 % en régimen estable, 2 % en transitorios y 0,5° en fase.
 * **Teoría ideal** (la del libro): sin nada de lo anterior. Su error es **informativo** y mide cuánto pesa cada idealización.
@@ -23,7 +23,7 @@ En los circuitos AC se desprecian los cables (0,02 Ω frente a ≥ 20 Ω, efecto
 | P4c · RL–RC serie-paralelo a 1 kHz | P4 | 12 | 12 | 0,0183 % · 0,00561° | 22,9 % · 0,00976° |
 | P5 · Dos mallas, dos fuentes y cinco medidores (DC) | P5 | 12 | 12 | 0,000773 % | 0,0737 % |
 
-**Rendimiento (RNF-06):** red de 301 elementos (151 nodos), 20000 pasos trapezoidales en 4,00 s (4999 pasos/s) frente a un límite de 10 s: ✅ cumple.
+**Rendimiento (RNF-06):** red de 301 elementos (151 nodos), 20000 pasos trapezoidales en 5,51 s (3627 pasos/s) frente a un límite de 10 s: ✅ cumple.
 
 ## Tablas por montaje
 
