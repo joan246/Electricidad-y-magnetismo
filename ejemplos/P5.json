@@ -1,0 +1,167 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "S0p",
+   "b": "T1A",
+   "color": "rojo"
+  },
+  {
+   "id": "w2",
+   "a": "S0n",
+   "b": "RTN1",
+   "color": "negro"
+  },
+  {
+   "id": "w3",
+   "a": "S1p",
+   "b": "T29A",
+   "color": "rojo"
+  },
+  {
+   "id": "w4",
+   "a": "S1n",
+   "b": "RTN30",
+   "color": "negro"
+  },
+  {
+   "id": "w5",
+   "a": "T10A",
+   "b": "T20A",
+   "color": "amarillo"
+  },
+  {
+   "id": "w6",
+   "a": "T19A",
+   "b": "RTN19",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T5D",
+   "b": "T10D"
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T25D",
+   "b": "T20D"
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T14D",
+   "b": "T19D"
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "AM1": {
+   "tipo": "AM",
+   "valor": 0.1,
+   "a": "T1C",
+   "b": "T5C"
+  },
+  "AM2": {
+   "tipo": "AM",
+   "valor": 0.1,
+   "a": "T29C",
+   "b": "T25C"
+  },
+  "AM3": {
+   "tipo": "AM",
+   "valor": 0.1,
+   "a": "T10C",
+   "b": "T14C"
+  },
+  "VM1": {
+   "tipo": "VM",
+   "valor": 10000000,
+   "a": "T5B",
+   "b": "T10B"
+  },
+  "VM2": {
+   "tipo": "VM",
+   "valor": 10000000,
+   "a": "T14B",
+   "b": "T19B"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 12,
+   "on": true
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": true
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P5",
+ "prueba": "P5",
+ "titulo": "P5 · Dos mallas, dos fuentes y cinco medidores (DC)",
+ "descripcion": "Fuentes 1 (12 V) y 2 (5 V), R1 (1 kΩ), R2 (2,2 kΩ), R3 (3,3 kΩ); AM1–AM3 en las ramas, VM1 sobre R1 y VM2 sobre R3.",
+ "osciloscopio": null
+}

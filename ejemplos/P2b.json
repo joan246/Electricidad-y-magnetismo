@@ -1,0 +1,159 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "B2J",
+   "b": "B7J",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "GEN1": {
+   "tipo": "GEN",
+   "valor": 50,
+   "a": "T2D",
+   "b": "B2H",
+   "forma": {
+    "tipo": "cuadrada",
+    "amplitud": 5,
+    "frecuencia": 500,
+    "dc": 5,
+    "ciclo": 0.5,
+    "fase": 0
+   }
+  },
+  "R7": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T2C",
+   "b": "T7C"
+  },
+  "L1": {
+   "tipo": "L",
+   "valor": 0.01,
+   "a": "T7D",
+   "b": "B7G"
+  },
+  "CH1": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T2B",
+   "b": "B2I"
+  },
+  "CH2": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T7B",
+   "b": "B7I"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 10,
+   "on": false
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": false
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P2b",
+ "prueba": "P2",
+ "titulo": "P2b · RL con onda cuadrada de 500 Hz",
+ "descripcion": "Generador cuadrado 0–10 V, 500 Hz, r_int 50 Ω → R (100 Ω) → L (10 mH). CH1 = generador, CH2 = v_L. τ = L/(R + r_int).",
+ "osciloscopio": {
+  "tdiv": 0.0002,
+  "modo": "disparo",
+  "canalDisparo": "CH1",
+  "nivel": 5,
+  "pendiente": "sube",
+  "desdeDC": false,
+  "metodo": "tr"
+ }
+}

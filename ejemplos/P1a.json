@@ -1,0 +1,136 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "S0p",
+   "b": "T2A",
+   "color": "rojo"
+  },
+  {
+   "id": "w2",
+   "a": "S0n",
+   "b": "B7J",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T2C",
+   "b": "T7C"
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "C1": {
+   "tipo": "C",
+   "valor": 0.000001,
+   "a": "T7D",
+   "b": "B7G"
+  },
+  "CH1": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T7B",
+   "b": "B7I"
+  },
+  "CH2": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T2B",
+   "b": "B7H"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 10,
+   "on": true
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": false
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P1a",
+ "prueba": "P1",
+ "titulo": "P1a · RC: carga con fuente DC (escalón)",
+ "descripcion": "Fuente 1 (10 V) → R1 (1 kΩ) → C (1 µF). CH1 sobre C (v_C), CH2 en la salida de la fuente. τ = RC = 1 ms.",
+ "osciloscopio": {
+  "tdiv": 0.001,
+  "modo": "encendido",
+  "desdeDC": false,
+  "metodo": "tr"
+ }
+}
