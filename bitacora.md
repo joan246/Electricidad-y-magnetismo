@@ -89,6 +89,18 @@ Convenciones:
 * También se comprobó con el osciloscopio: con el cursor en 25 %, v_CB = 8,975 V, igual que el cálculo a mano.
 * Estado: 308/308 del motor, 19/19 del barrido, 21/21 del potenciómetro y 99/99 de la validación, sin errores en la consola.
 
+### 12-nov-2026 · Recuperación del incremento 10 e incremento 11: dos mallas, 3 puentes y 2 resistencias (Joan Hinestroza, con IA)
+* **Problema:** el archivo `simulador.html` subido el 9-nov (commit `e877f5a`) partía de la versión del incremento 9 y, al reemplazar el archivo, **quitó el incremento 10** (potenciómetro y máxima transferencia). El manual, la guía y esta bitácora lo seguían describiendo.
+  * **Causa:** se subió el archivo completo por la página de GitHub en lugar de fusionar los cambios.
+  * **Solución:** fusión de tres vías (`git merge-file`) entre el incremento 9, el incremento 10 y el archivo del 9-nov. No hubo conflictos y se conservan los tres arreglos de ese archivo: validación de las bandas y de la tensión de las fuentes al cargar un JSON, y comillas escapadas al exportar el CSV.
+  * **Lección:** los cambios se integran con ramas y *pull requests*, no subiendo el archivo completo.
+* **Incremento 11:** ejemplo «Dos mallas · 3 puentes y 2 R» en «Circuitos de ejemplo».
+  * Fuente 1 (12 V), R1 (1 kΩ) en la rama central y R2 (2,2 kΩ) en la rama derecha, con tres cables puente, tres amperímetros y dos voltímetros.
+  * **Decisión:** va fuera de `EJEMPLOS`, como los del potenciómetro, para no cambiar los 11 montajes del protocolo ni tocar `preset()` del base.
+  * 10 pruebas nuevas frente al análisis de mallas: I1, I2, I1 − I2, v_R1, v_R2, R equivalente, KCL, KVL de las dos mallas y balance de potencia. Error máximo 0,11 %, por la r interna de la fuente (0,5 Ω), los cables y los shunts.
+* Se agregaron al repositorio las carpetas `base/`, `pruebas/`, `ejemplos/`, `resultados/` y `docs/`, que el README citaba pero no se habían subido.
+* Estado: 308/308 del motor, 96/96 de regresión (las 86 anteriores más las 10 del ejemplo nuevo) y 99/99 de la validación en Node; 405 comprobaciones sin fallas en el navegador, sin errores en la consola.
+
 ---
 
 ## 2. Reuniones del grupo [completar]
@@ -128,3 +140,4 @@ Lo que cada integrante comprobó por su cuenta: por ejemplo, el cálculo a mano 
 | 14 a 20-oct-2026 | Claude (Anthropic), Claude Code | análisis del base, código del motor, interfaz, pruebas y borradores de los documentos | [completar: qué revisó cada integrante] |
 | 30-oct-2026 | Claude (Anthropic) | prueba del simulador, corrección del deslizador de las fuentes, incremento 9 (barrido de tensión), sus pruebas y la documentación | [completar: qué revisó Miguel] |
 | 31-oct-2026 | Claude (Anthropic) | incremento 10 (potenciómetro, barrido del cursor, máxima transferencia y efecto de carga), sus pruebas y la documentación | [completar: qué revisó Miguel] |
+| 12-nov-2026 | Claude (Anthropic), Claude Code | recuperación del incremento 10, incremento 11 (ejemplo de dos mallas, 3 puentes y 2 resistencias), sus pruebas, la documentación y la evaluación frente a la rúbrica | [completar: qué revisó Joan] |

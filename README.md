@@ -6,7 +6,7 @@ Ampliación del simulador `simulador_protoboard_dc.html` del curso a un laborato
 
 | Ruta | Contenido |
 |---|---|
-| `simulador.html` | **simulador final** (incrementos 1 a 10) |
+| `simulador.html` | **simulador final** (incrementos 1 a 11) |
 | `simulador_v1.html` | prototipo de la Fase 1 (incrementos 1 a 5: motor MNA, R, C y L ilimitados, generador, medidores, bancos; sin osciloscopio sobre el montaje) |
 | `base/simulador_protoboard_dc.html` | archivo original del profesor, sin cambios (referencia de la regresión) |
 | `informe_fase1.md` | informe de la Fase 1 |
@@ -35,6 +35,7 @@ Abrir `simulador.html` con doble clic en un navegador moderno (Chrome, Edge o Fi
 * **Fuentes 1–3 (fuente variable):** deslizador, botones − y + de 0,1 V o valor exacto escrito (0–30 V).
 * **Barridos · fuente variable** (incremento 9): recorre la tensión de una fuente, lee todos los medidores en cada punto y ajusta una recta (R = ΔV/ΔI, ganancia de un divisor, superposición). Exporta CSV y SVG.
 * **Potenciómetro** (incremento 10): componente de tres terminales (A, cursor y B) con el cursor ajustable. Su barrido calcula el equivalente de Thévenin y comprueba la **máxima transferencia de potencia** (reóstato), o mide el **efecto de carga** (divisor). Hay dos ejemplos en «Circuitos de ejemplo».
+* **Dos mallas · 3 puentes y 2 R** (incremento 11): ejemplo con una fuente, dos resistencias en paralelo unidas con tres cables puente, tres amperímetros y dos voltímetros, para comprobar las leyes de Kirchhoff.
 * **Simulación temporal:** bancos RC, RL, RLC y RL–RC con fuente variable o generador.
 
 El detalle está en `manual_usuario.md`.
@@ -57,7 +58,7 @@ node pruebas/generar_ejemplos.js
 
 ## Historia en git
 
-Los primeros commits se reconstruyeron a partir de los respaldos guardados al final de los incrementos 3 a 7, y solo contienen el archivo del simulador. El último commit contiene el proyecto completo. Desde aquí, cada integrante debe hacer sus propios commits con su nombre.
+El primer commit contiene el proyecto hasta el incremento 8. Los incrementos 9, 10 y 11 entraron por ramas y *pull requests*. Cada integrante hace sus propios commits con su nombre; los cambios se integran con ramas, no subiendo el archivo completo por la página de GitHub (así se perdió el incremento 10 el 9-nov; se recuperó el 12-nov, ver `bitacora.md`).
 
 ## Uso de IA
 

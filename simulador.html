@@ -293,6 +293,7 @@ table.cmp td.msg{font-family:var(--sans);font-size:11px;max-width:420px}
         <button class="mini" data-preset="mixto">Mixto R1+(R2‖R3)</button>
         <button class="mini" data-preset="divisor">Divisor con medidas</button>
         <button class="mini" id="ejemploP5">P5 · dos mallas, dos fuentes</button>
+        <button class="mini" id="ejemploDosMallas">Dos mallas · 3 puentes y 2 R</button>
         <button class="mini" id="ejemploOscRC">Osciloscopio · carga RC</button>
         <button class="mini" id="ejemploOscFiltro">Osciloscopio · filtro RC con generador</button>
         <button class="mini" id="ejemploPotDivisor">Potenciómetro · divisor</button>
@@ -1165,6 +1166,7 @@ const PruebasMotor = (function(){
   const R_SHUNT_ALTA       = 100;         // Ω · amperímetro "malo" para ver el efecto de inserción
   // P5: dos mallas con dos fuentes (protocolo). Nodo a común a las tres ramas.
   const P5_REF = Object.freeze({V1:12, V2:5, R1:1e3, R2:2.2e3, R3:3.3e3});
+  const DOS_MALLAS_REF = Object.freeze({V:12, R1:1e3, R2:2.2e3});   // incr. 11: una fuente, R1 ‖ R2
   const TOL_FUGA_PCT       = 0.01;        // % · diferencia admitida por las fugas de 1 nS por nodo del modelo del base
   const TOL_DISPARO        = 1e-4;        // fracción de período · instante de disparo frente a la fórmula
   const TOL_MEDIDA         = 1e-4;        // relativa · medidas automáticas sobre señales muestreadas finas
@@ -2234,6 +2236,43 @@ const PruebasMotor = (function(){
     return filas;
   }
 
+  /* ---------- Dos mallas, 3 puentes y 2 resistencias en el protoboard (incr. 11) ----------
+     B = {st, solveDC}. Arma ModeloMontaje.MONTAJE_DOS_MALLAS y compara las lecturas de los
+     5 medidores con el análisis de mallas (I1 e I2 en sentido horario):
+        malla 1 (fuente y R1):  V − R1·(I1 − I2) = 0
+        malla 2 (R1 y R2):      R1·(I2 − I1) + R2·I2 = 0
+     Sumando las dos ecuaciones, V = R2·I2; entonces I2 = V/R2 e I1 = V/R1 + V/R2.
+     Como en P5, la teoría ignora la r interna de la fuente (0,5 Ω), los cables (0,02 Ω) y
+     los shunts (0,1 Ω): diferencias del orden de 10⁻³. */
+  function teoriaDosMallasUnaFuente(p){
+    const I2=p.V/p.R2, I1=p.V/p.R1+I2, IR1=I1-I2;
+    return {I1, I2, IR1, Req:p.V/I1, P:p.V*I1, PR1:p.R1*IR1*IR1, PR2:p.R2*I2*I2};
+  }
+  function pruebaDosMallasMontaje(B){
+    const filas=[], p=DOS_MALLAS_REF, th=teoriaDosMallasUnaFuente(p);
+    const ids=ModeloMontaje.construirEjemploDosMallas(B.st);
+    const res=B.solveDC(), lect={};
+    ids.forEach(k=>{ lect[k]=ModeloMontaje.lecturaMedidor(B.st.res[k], res.I(k)); });
+    const [am1,am2,am3,vm1,vm2]=ids;
+    const fila=(prueba, obtenido, esperado)=>{
+      const ev=evaluarFila({magnitud:prueba, motor:obtenido, teorico:esperado, unidad:'', clase:'estable'});
+      filas.push({prueba, obtenido, esperado, error:ev.error, pasa:ev.pasa});
+    };
+    const residuo=(prueba, valor)=>filas.push({prueba, obtenido:valor, esperado:0, error:valor, pasa:valor<CRITERIO_ESTABLE_PCT});
+    fila(`${am1}: I1 que entrega la fuente = V/R1 + V/R2 (A)`, lect[am1], th.I1);
+    fila(`${am2}: I2 por R2 = V/R2 (A)`, lect[am2], th.I2);
+    fila(`${am3}: I1 − I2 por R1 = V/R1 (A)`, lect[am3], th.IR1);
+    fila(`${vm1}: v_R1 = V (V)`, lect[vm1], p.V);
+    fila(`${vm2}: v_R2 = V (V)`, lect[vm2], p.V);
+    fila(`R equivalente que ve la fuente: V / ${am1} = R1·R2/(R1 + R2) (Ω)`, p.V/lect[am1], th.Req);
+    residuo(`KCL en el nodo A con las lecturas: |${am1} − ${am2} − ${am3}| / ${am1} (%)`, Math.abs(lect[am1]-lect[am2]-lect[am3])/Math.abs(lect[am1])*100);
+    residuo(`KVL malla 1 con las lecturas: |V − ${vm1}| / V (%)`, Math.abs(p.V-lect[vm1])/p.V*100);
+    residuo(`KVL malla 2 con las lecturas: |${vm1} − ${vm2}| / V (%)`, Math.abs(lect[vm1]-lect[vm2])/p.V*100);
+    const entregada=p.V*lect[am1], disipada=p.R1*lect[am3]**2+p.R2*lect[am2]**2;
+    residuo('balance con las lecturas: |V·I1 − Σ R·I²| / Σ R·I² (%)', Math.abs(entregada-disipada)/disipada*100);
+    return filas;
+  }
+
   /* ==================== PRUEBAS DEL INCREMENTO 6 (osciloscopio) ==================== */
   function pruebaOsciloscopioLogica(T){
     const O=Osciloscopio, M=ModeloMontaje;
@@ -2501,6 +2540,7 @@ const PruebasMotor = (function(){
     PERIODOS_MEDICION, CRITERIO_FASE_GRADOS,
     netlistDesdeBase, compararConBase, VALORES_DORADOS, lecturasEjemplo, compararDorados,
     teoriaDosMallas, pruebaP5Montaje, P5_REF, pruebaOsciloscopioMontaje, pruebaEjemplosIdaVuelta, canonico,
+    teoriaDosMallasUnaFuente, pruebaDosMallasMontaje, DOS_MALLAS_REF,
     errorMaxNormPct, errorPct, valorEn, instanteCruce, medirTau, picos, medirOscilacion, ajusteLineal,
     PASOS_POR_ESCALA, VENTANA_ESCALAS, FRACCION_TAU, CRITERIO,
     CRITERIO_ESTABLE_PCT, CRITERIO_TRANSITORIO_PCT, CRITERIO_CONVERGENCIA_PCT
@@ -2760,6 +2800,31 @@ const ModeloMontaje = (function(){
     componentes:[['AM','T1C','T5C'], ['AM','T29C','T25C'], ['AM','T10C','T14C'], ['VM','T5B','T10B'], ['VM','T14B','T19B']]
   });
 
+  /* ---------- ejemplo: dos mallas, 3 puentes y 2 resistencias (incr. 11) ----------
+     No es parte del protocolo P1–P5 (EJEMPLOS), así la validación y sus 11 montajes no cambian.
+     Una fuente y dos resistencias en paralelo unidas con tres cables puente:
+       Fuente 1 (12 V) + → riel positivo superior → PUENTE 1 → AM1 → nodo A (columna 5)
+       rama central (compartida por las dos mallas): nodo A → AM3 → R1 (1 kΩ) → nodo B (columna 14)
+       rama derecha: nodo A → PUENTE 2 → AM2 → R2 (2,2 kΩ) → PUENTE 3 → nodo B
+       nodo B → borne − de la fuente 1
+     Malla 1: fuente y R1. Malla 2: R1 y R2. VM1 sobre R1 y VM2 sobre R2. La punta roja (a) de
+     cada amperímetro mira hacia el borne + de la fuente: las tres lecturas son positivas. */
+  const MONTAJE_DOS_MALLAS = Object.freeze({
+    fuentes:[{i:0, V:12, on:true}, {i:1, on:false}, {i:2, on:false}],
+    cables:[['S0p','RTP1','rojo'], ['RTP2','T1A','amarillo'], ['T5A','T17A','azul'], ['T26E','T14E','amarillo'], ['S0n','T14D','negro']],
+    resistencias:{R1:['T9C','T14C'], R2:['T21D','T26D']},
+    componentes:[['AM','T1C','T5C'], ['AM','T17C','T21C'], ['AM','T5D','T9D'], ['VM','T9B','T14B'], ['VM','T21B','T26B']]
+  });
+  const EJEMPLO_DOS_MALLAS = Object.freeze({titulo:'Dos mallas · 3 puentes y 2 resistencias (R1 ‖ R2)', montaje:MONTAJE_DOS_MALLAS,
+    descripcion:'Fuente 1 (12 V), R1 (1 kΩ) en la rama central y R2 (2,2 kΩ) en la rama derecha, unidas con 3 puentes; AM1–AM3 en las ramas, VM1 sobre R1 y VM2 sobre R2.'});
+  // Arma el ejemplo en st (R1–R6 con sus bandas originales y valor nominal) y devuelve los
+  // identificadores de sus medidores, en el orden de MONTAJE_DOS_MALLAS.componentes
+  function construirEjemploDosMallas(st){
+    IDS_BASE.forEach(k=>{ st.res[k].bands=BANDAS_BASE[k].slice(); st.res[k].dev=0; });
+    st.ideal=false;
+    return aplicarMontaje(st, MONTAJE_DOS_MALLAS);
+  }
+
   /* ---------- ejemplos del osciloscopio (incr. 6) ----------
      Carga RC (P1): fuente 1 (10 V) → R1 (1 kΩ) → C (1 µF, cruzando el canal) → tierra (columna 7 de abajo).
        CH1 sobre el capacitor; CH2 sobre la salida de la fuente (el escalón).
@@ -2956,7 +3021,9 @@ const ModeloMontaje = (function(){
     netlist, diagnostico, aJSON, desdeJSON,
     // incr. 10: potenciómetro
     RESIDUAL_POT, POSICION_DEFECTO, POTENCIA_NOMINAL_POT, alfaEfectivo, segmentosPot, cursorPotenciometro, validarPosicion,
-    MONTAJE_POT_DIVISOR, MONTAJE_POT_MAXIMA, EJEMPLOS_POT, construirEjemploPot
+    MONTAJE_POT_DIVISOR, MONTAJE_POT_MAXIMA, EJEMPLOS_POT, construirEjemploPot,
+    // incr. 11: dos mallas, 3 puentes y 2 resistencias
+    MONTAJE_DOS_MALLAS, EJEMPLO_DOS_MALLAS, construirEjemploDosMallas
   });
 })();
 </script>
@@ -5116,6 +5183,13 @@ function cargarEjemploPot(id){
   if(typeof PanelBarrido!=='undefined') PanelBarrido.prepararPotenciometro();
   msg(E.titulo);
 }
+// [incr. 11] dos mallas, 3 puentes y 2 resistencias (fuera del protocolo P1–P5)
+function cargarEjemploDosMallas(){
+  ModeloMontaje.construirEjemploDosMallas(st);
+  buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw(); PanelOsciloscopio.construirControles();
+  msg(ModeloMontaje.EJEMPLO_DOS_MALLAS.titulo);
+}
+L('ejemploDosMallas').onclick=cargarEjemploDosMallas;
 L('ejemploPotDivisor').onclick=()=>cargarEjemploPot('divisor');
 L('ejemploPotMaxima').onclick=()=>cargarEjemploPot('maxima');
 buildCompPanel();
@@ -6390,6 +6464,19 @@ const BancoTransitorios = (function(){
       buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw();
     }
   }
+  // [incr. 11] Dos mallas, 3 puentes y 2 resistencias; restaura el montaje del usuario
+  function pruebaDosMallasEnProtoboard(){
+    const copia=JSON.stringify({wires:st.wires, wid:st.wid, ideal:st.ideal,
+      res:Object.fromEntries(Object.entries(st.res).map(([k,r])=>[k,Object.assign({}, r, r.bands?{bands:r.bands.slice()}:{})])),
+      srcs:st.srcs.map(s=>({V:s.V,on:s.on}))});
+    try{ return PruebasMotor.pruebaDosMallasMontaje({st, solveDC}); }
+    finally{
+      const d=JSON.parse(copia);
+      st.wires=d.wires; st.wid=d.wid; st.ideal=d.ideal; st.res=d.res;
+      d.srcs.forEach((s,i)=>Object.assign(st.srcs[i], s));
+      buildSrcPanel(); buildRPanel(); buildCompPanel(); redraw();
+    }
+  }
   function pruebaIdaVueltaEnProtoboard(){
     const copia=JSON.stringify({wires:st.wires, wid:st.wid, ideal:st.ideal, res:st.res, srcs:st.srcs.map(s=>({V:s.V,on:s.on}))});
     try{ return PruebasMotor.pruebaEjemplosIdaVuelta({st, buildNet, solveDC, PT}); }
@@ -6422,6 +6509,7 @@ const BancoTransitorios = (function(){
       const R=PruebasMotor.ejecutar();
       const reg=regresionEjemplos();
       const p5=pruebaP5EnProtoboard();
+      const dm=pruebaDosMallasEnProtoboard();          // [incr. 11] dos mallas, 3 puentes y 2 R
       const osc=pruebaOscEnProtoboard();
       const ida=pruebaIdaVueltaEnProtoboard();
       const bar=PanelBarrido.pruebas();        // [incr. 9] fuente variable: barrido de tensión
@@ -6447,6 +6535,10 @@ const BancoTransitorios = (function(){
       p5.forEach(f=>{
         h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${formatoPct(f.error)}</td><td>&lt; 1 %</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`;
       });
+      h+=`<tr class="g"><td colspan="6">Dos mallas, 3 puentes y 2 resistencias (incremento 11): lecturas de los 5 medidores frente al análisis de mallas</td></tr>`;
+      dm.forEach(f=>{
+        h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${formatoPct(f.error)}</td><td>&lt; 1 %</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`;
+      });
       h+=`<tr class="g"><td colspan="6">Osciloscopio sobre montajes del protoboard (carga RC y filtro con generador)</td></tr>`;
       osc.forEach(f=>{
         const err = f.error===null ? '—' : (f.unidadError==='°' ? formatoIng(f.error,'°',3) : formatoPct(f.error));
@@ -6460,7 +6552,7 @@ const BancoTransitorios = (function(){
       pot.forEach(f=>{ h+=`<tr><td>${f.prueba}</td>${celda(f.obtenido,'')}${celda(f.esperado,'')}<td class="n">${f.error===null?'—':formatoPct(f.error)}</td><td>${f.criterio}</td><td class="${f.pasa?'ok':'ko'}">${f.pasa?'✔':'✖'}</td></tr>`; });
       h+=`</tbody></table><p class="hint">Mismas pruebas que <code>node pruebas/ejecutar_pruebas.js</code>, más las del barrido de tensión (incremento 9) y las del potenciómetro (incremento 10), que solo corren en el navegador. La regresión pone las resistencias en su valor nominal, compara con las lecturas del simulador original y restaura tu montaje al terminar.</p></div>`;
       L('bancoPruebas').innerHTML=h;
-      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos, ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión y ${pot.filter(f=>f.pasa).length}/${pot.length} del potenciómetro cumplen.`);
+      mostrarEstado(`Pruebas terminadas: ${R.pasan}/${R.total} del motor, ${pasanReg}/${reg.length} de regresión, ${p5.filter(f=>f.pasa).length}/${p5.length} de P5, ${dm.filter(f=>f.pasa).length}/${dm.length} de dos mallas con 3 puentes, ${osc.filter(f=>f.pasa).length}/${osc.length} del osciloscopio, ${ida.filter(f=>f.pasa).length}/${ida.length} de ida y vuelta de los ejemplos, ${bar.filter(f=>f.pasa).length}/${bar.length} del barrido de tensión y ${pot.filter(f=>f.pasa).length}/${pot.length} del potenciómetro cumplen.`);
     }, 30);
   }
 

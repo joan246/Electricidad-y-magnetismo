@@ -303,6 +303,72 @@ El control del cursor no reconstruye la tarjeta mientras se arrastra. Es la mism
 
 ---
 
+## 5C. Dos mallas, 3 puentes y 2 resistencias (incremento 11: `MONTAJE_DOS_MALLAS`)
+
+**El circuito.** Fuente 1 de V = 12 V, R1 = 1 kΩ en la rama central y R2 = 2,2 kΩ en la rama derecha. Las dos ramas comparten los nodos A (arriba) y B (abajo), así que R1 y R2 están en paralelo. Los tres puentes son cables: el puente 1 lleva la corriente de la fuente al nodo A, el puente 2 une el nodo A con la rama de R2 y el puente 3 la devuelve al nodo B.
+
+```
+        puente 1        A      puente 2
+   +───────────────────●──────────────────┐
+   │                   │                  │
+ (12 V)  malla 1      [R1]    malla 2    [R2]
+   │      I1 ↻         │       I2 ↻       │
+   −───────────────────●──────────────────┘
+                        B      puente 3
+```
+
+**Análisis de mallas.** Se asigna una corriente a cada malla, las dos en sentido horario: I1 a la malla 1 (fuente y R1) e I2 a la malla 2 (R1 y R2). Por R1 pasan las dos en sentidos opuestos, así que su corriente es I1 − I2. Se aplica la ley de tensiones de Kirchhoff (la suma de tensiones en una malla es cero):
+
+* Malla 1: V − R1·(I1 − I2) = 0
+* Malla 2: −R1·(I2 − I1) − R2·I2 = 0
+
+En forma de sistema:
+
+```
+ R1·I1 −       R1·I2 = V          1000·I1 − 1000·I2 = 12
+−R1·I1 + (R1 + R2)·I2 = 0        −1000·I1 + 3200·I2 = 0
+```
+
+Sumando las dos ecuaciones queda R2·I2 = V. Entonces:
+
+* I2 = V/R2 = 12/2200 = **5,4545 mA** (corriente de R2)
+* I1 = V/R1 + V/R2 = 12 + 5,4545 = **17,4545 mA** (corriente de la fuente)
+* I1 − I2 = V/R1 = **12,0000 mA** (corriente de R1)
+
+**Comprobación por nodos.** En el nodo A entra I1 y salen las corrientes de R1 y R2: I1 = I_R1 + I_R2, es decir 17,4545 = 12,0000 + 5,4545 mA. Es la ley de corrientes de Kirchhoff.
+
+**Resistencia equivalente.** R_eq = R1·R2/(R1 + R2) = 2 200 000/3 200 = **687,5 Ω**, y V/R_eq = 17,4545 mA: la misma I1.
+
+**Potencia.** La fuente entrega P = V·I1 = **209,45 mW**. R1 disipa R1·(I1 − I2)² = 144,00 mW y R2 disipa R2·I2² = 65,45 mW. La suma es 209,45 mW: la energía se conserva.
+
+**Por qué el simulador da un poco menos (teoría del montaje).** El montaje tiene resistencias pequeñas que el cálculo ideal ignora:
+
+* En serie con la fuente: r interna 0,5 Ω, dos cables de 0,02 Ω, el puente 1 (0,02 Ω) y el shunt de AM1 (0,1 Ω). En total r_s = 0,66 Ω.
+* Rama central: shunt de AM3 (0,1 Ω) más R1 en paralelo con VM1 (10 MΩ): 1 000,000 Ω.
+* Rama derecha: puentes 2 y 3 (0,04 Ω), shunt de AM2 (0,1 Ω) y R2 en paralelo con VM2: 2 199,656 Ω.
+
+Con ellas, I1 = V/(r_s + R_A‖R_B) = 12/(0,66 + 687,466) = **17,4386 mA**, que es lo que lee AM1.
+
+| Magnitud | Ideal | Simulador | Diferencia |
+|---|---|---|---|
+| I1 (AM1) | 17,4545 mA | 17,4387 mA | 0,091 % |
+| I2 (AM2) | 5,4545 mA | 5,4502 mA | 0,080 % |
+| I1 − I2 (AM3) | 12,0000 mA | 11,9885 mA | 0,096 % |
+| v_R1 (VM1) | 12 V | 11,9873 V | 0,106 % |
+| v_R2 (VM2) | 12 V | 11,9877 V | 0,102 % |
+| R equivalente (V/AM1) | 687,5 Ω | 688,13 Ω | 0,091 % |
+
+KCL con las lecturas: |AM1 − AM2 − AM3|/AM1 = 4·10⁻⁵ %. El residuo son las fugas de 1 nS por nodo (GMIN).
+
+**Preguntas probables.**
+
+* **¿Por qué dos mallas si solo hay una fuente?** Una malla es un lazo cerrado sin otros lazos dentro; no necesita fuente propia. Aquí hay dos «ventanas»: fuente–R1 y R1–R2.
+* **¿Por qué VM2 lee un poco más que VM1?** Antes de R1 está el shunt de AM3, que con 12 mA baja 1,2 mV. En la rama de R2 los dos puentes y AM2 bajan solo 0,76 mV, porque pasa menos corriente.
+* **¿Qué pasa si se quita el puente 2 o el 3?** La rama de R2 queda abierta: I2 = 0 e I1 = V/R1 ≈ 12 mA. Al quitar el puente 2, el simulador avisa que un terminal de AM2 quedó en el aire.
+* **¿Y con fuentes ideales?** Con el botón «Fuentes ideales» desaparecen los 0,5 Ω y la diferencia baja a la de los cables y los shunts.
+
+---
+
 ## 6. Física que hay que saber explicar
 
 * **τ = RC.** En t = τ la exponencial vale e^(−1) = 0,368, así que v_C llega al 1 − 0,368 = 63,2 % del valor final. En 5τ está al 99,3 %.

@@ -188,6 +188,10 @@ En «Circuitos de ejemplo»:
 
 * **Serie, Paralelo, Mixto y Divisor:** los cuatro ejemplos originales del base.
 * **P5 · dos mallas** y **Osciloscopio · carga RC / filtro RC con generador:** accesos directos.
+* **Dos mallas · 3 puentes y 2 R** (incremento 11): la fuente 1 (12 V) alimenta R1 (1 kΩ, rama central) y R2 (2,2 kΩ, rama derecha), unidas con tres cables puente.
+  * Puente 1 (amarillo): del riel positivo al amperímetro AM1. Puente 2 (azul): del nodo A a la rama de R2. Puente 3 (amarillo): de R2 de vuelta al nodo B.
+  * AM1 lee la corriente de la fuente (17,44 mA), AM2 la de R2 (5,45 mA) y AM3 la de R1 (11,99 mA). VM1 y VM2 leen la tensión de cada resistencia (11,99 V).
+  * Sirve para comprobar las leyes de Kirchhoff: AM1 = AM2 + AM3 en el nodo A, y la misma tensión en las dos ramas.
 * **Potenciómetro · divisor** y **Potenciómetro · máxima transferencia** (incremento 10): arman el montaje y preparan el barrido del cursor.
 * **Ejemplos del protocolo de validación:** los 11 montajes P1a … P5. Arman el circuito, con las resistencias en su valor nominal, y configuran el osciloscopio.
 
