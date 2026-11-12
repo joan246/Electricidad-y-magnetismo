@@ -1,0 +1,147 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "B3J",
+   "b": "B8J",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T3D",
+   "b": "T8D"
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "GEN1": {
+   "tipo": "GEN",
+   "valor": 50,
+   "a": "T3C",
+   "b": "B3H",
+   "forma": {
+    "tipo": "seno",
+    "amplitud": 1,
+    "frecuencia": 159.15494309189532,
+    "dc": 0,
+    "ciclo": 0.5,
+    "fase": 0
+   }
+  },
+  "C1": {
+   "tipo": "C",
+   "valor": 0.000001,
+   "a": "T8E",
+   "b": "B8F"
+  },
+  "CH1": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T3B",
+   "b": "B3I"
+  },
+  "CH2": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T8B",
+   "b": "B8I"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 10,
+   "on": false
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": false
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P4a",
+ "prueba": "P4",
+ "titulo": "P4a · Filtro RC pasa-bajas en f_c = 159 Hz",
+ "descripcion": "Generador seno 1 V en f_c = 1/(2πRC), r_int 50 Ω → R1 (1 kΩ) → C (1 µF). CH1 = entrada, CH2 = salida: −3 dB y −45°.",
+ "osciloscopio": {
+  "tdiv": 0.001,
+  "modo": "disparo",
+  "canalDisparo": "CH1",
+  "nivel": 0,
+  "pendiente": "sube",
+  "desdeDC": false,
+  "metodo": "tr"
+ }
+}

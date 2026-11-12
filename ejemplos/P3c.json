@@ -1,0 +1,154 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "S0p",
+   "b": "T2A",
+   "color": "rojo"
+  },
+  {
+   "id": "w2",
+   "a": "S0n",
+   "b": "B12J",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R7": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T2C",
+   "b": "T7C"
+  },
+  "L1": {
+   "tipo": "L",
+   "valor": 0.01,
+   "a": "T7D",
+   "b": "T12D"
+  },
+  "C1": {
+   "tipo": "C",
+   "valor": 0.000001,
+   "a": "T12E",
+   "b": "B12F"
+  },
+  "CH1": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T12B",
+   "b": "B12I"
+  },
+  "CH2": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T2B",
+   "b": "T7B"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 10,
+   "on": true
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": false
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P3c",
+ "prueba": "P3",
+ "titulo": "P3c · RLC serie sobreamortiguado (R = 1 kΩ)",
+ "descripcion": "Igual que P3a con R = 1 kΩ: dos exponenciales reales, sin sobrepico.",
+ "osciloscopio": {
+  "tdiv": 0.001,
+  "modo": "encendido",
+  "desdeDC": false,
+  "metodo": "tr"
+ }
+}

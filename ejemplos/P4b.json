@@ -1,0 +1,171 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "B2J",
+   "b": "B12J",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "GEN1": {
+   "tipo": "GEN",
+   "valor": 50,
+   "a": "T2D",
+   "b": "B2H",
+   "forma": {
+    "tipo": "seno",
+    "amplitud": 1,
+    "frecuencia": 1591.5494309189535,
+    "dc": 0,
+    "ciclo": 0.5,
+    "fase": 0
+   }
+  },
+  "R7": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "negro",
+    "negro",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T2C",
+   "b": "T7C"
+  },
+  "L1": {
+   "tipo": "L",
+   "valor": 0.01,
+   "a": "T7D",
+   "b": "T12D"
+  },
+  "C1": {
+   "tipo": "C",
+   "valor": 0.000001,
+   "a": "T12E",
+   "b": "B12F"
+  },
+  "CH1": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T2B",
+   "b": "B2I"
+  },
+  "CH2": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T12B",
+   "b": "B12I"
+  },
+  "CH3": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T2A",
+   "b": "T7B"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 10,
+   "on": false
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": false
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P4b",
+ "prueba": "P4",
+ "titulo": "P4b · RLC serie en resonancia (f0 ≈ 1,59 kHz)",
+ "descripcion": "Generador seno 1 V en f0, r_int 50 Ω → R (20 Ω) → L (10 mH) → C (1 µF). CH1 = generador, CH2 = v_C (≈ 5 veces CH1), CH3 = v_R (en fase con CH1).",
+ "osciloscopio": {
+  "tdiv": 0.0002,
+  "modo": "disparo",
+  "canalDisparo": "CH1",
+  "nivel": 0,
+  "pendiente": "sube",
+  "desdeDC": false,
+  "metodo": "tr"
+ }
+}

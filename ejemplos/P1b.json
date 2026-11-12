@@ -1,0 +1,147 @@
+{
+ "version": 2,
+ "wires": [
+  {
+   "id": "w1",
+   "a": "B2J",
+   "b": "B7J",
+   "color": "negro"
+  }
+ ],
+ "res": {
+  "R1": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "negro",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": "T2C",
+   "b": "T7C"
+  },
+  "R2": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "rojo",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R3": {
+   "tipo": "R",
+   "bands": [
+    "naranja",
+    "naranja",
+    "rojo",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R4": {
+   "tipo": "R",
+   "bands": [
+    "rojo",
+    "violeta",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R5": {
+   "tipo": "R",
+   "bands": [
+    "verde",
+    "azul",
+    "marron",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "R6": {
+   "tipo": "R",
+   "bands": [
+    "marron",
+    "verde",
+    "naranja",
+    "dorado"
+   ],
+   "dev": 0,
+   "a": null,
+   "b": null
+  },
+  "GEN1": {
+   "tipo": "GEN",
+   "valor": 50,
+   "a": "T2D",
+   "b": "B2H",
+   "forma": {
+    "tipo": "cuadrada",
+    "amplitud": 5,
+    "frecuencia": 50,
+    "dc": 5,
+    "ciclo": 0.5,
+    "fase": 0
+   }
+  },
+  "C1": {
+   "tipo": "C",
+   "valor": 0.000001,
+   "a": "T7D",
+   "b": "B7G"
+  },
+  "CH1": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T2B",
+   "b": "B2I"
+  },
+  "CH2": {
+   "tipo": "CH",
+   "valor": 1000000,
+   "a": "T7B",
+   "b": "B7I"
+  }
+ },
+ "srcs": [
+  {
+   "i": 0,
+   "V": 10,
+   "on": false
+  },
+  {
+   "i": 1,
+   "V": 5,
+   "on": false
+  },
+  {
+   "i": 2,
+   "V": 9,
+   "on": false
+  }
+ ],
+ "ejemplo": "P1b",
+ "prueba": "P1",
+ "titulo": "P1b · RC con onda cuadrada de 50 Hz (≪ 1/τ)",
+ "descripcion": "Generador cuadrado 0–10 V, 50 Hz, r_int 50 Ω → R1 (1 kΩ) → C (1 µF). CH1 = generador, CH2 = v_C. τ = (R + r_int)·C.",
+ "osciloscopio": {
+  "tdiv": 0.002,
+  "modo": "disparo",
+  "canalDisparo": "CH1",
+  "nivel": 5,
+  "pendiente": "sube",
+  "desdeDC": false,
+  "metodo": "tr"
+ }
+}
