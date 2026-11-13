@@ -6,7 +6,7 @@ Ampliación del simulador `simulador_protoboard_dc.html` del curso a un laborato
 
 | Ruta | Contenido |
 |---|---|
-| `simulador.html` | **simulador final** (incrementos 1 a 11) |
+| `simulador.html` | **simulador final** (incrementos 1 a 12) |
 | `simulador_v1.html` | prototipo de la Fase 1 (incrementos 1 a 5: motor MNA, R, C y L ilimitados, generador, medidores, bancos; sin osciloscopio sobre el montaje) |
 | `base/simulador_protoboard_dc.html` | archivo original del profesor, sin cambios (referencia de la regresión) |
 | `informe_fase1.md` | informe de la Fase 1 |
@@ -36,6 +36,7 @@ Abrir `simulador.html` con doble clic en un navegador moderno (Chrome, Edge o Fi
 * **Barridos · fuente variable** (incremento 9): recorre la tensión de una fuente, lee todos los medidores en cada punto y ajusta una recta (R = ΔV/ΔI, ganancia de un divisor, superposición). Exporta CSV y SVG.
 * **Potenciómetro** (incremento 10): componente de tres terminales (A, cursor y B) con el cursor ajustable. Su barrido calcula el equivalente de Thévenin y comprueba la **máxima transferencia de potencia** (reóstato), o mide el **efecto de carga** (divisor). Hay dos ejemplos en «Circuitos de ejemplo».
 * **Dos mallas · 3 puentes y 2 R** (incremento 11): ejemplo con una fuente, dos resistencias en paralelo unidas con tres cables puente, tres amperímetros y dos voltímetros, para comprobar las leyes de Kirchhoff.
+* **Barrido de frecuencia** (incremento 12): amplitud y fase frente a la frecuencia de un generador, con la frecuencia de resonancia, las frecuencias de corte, el ancho de banda y Q. Incluye el ejemplo «RLC paralelo · resonancia» y el botón «+ Fuente DC» (fuentes DC sin límite).
 * **Simulación temporal:** bancos RC, RL, RLC y RL–RC con fuente variable o generador.
 
 El detalle está en `manual_usuario.md`.

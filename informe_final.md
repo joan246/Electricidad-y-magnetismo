@@ -15,7 +15,7 @@ Entregables: `simulador.html` (simulador final), `ejemplos/*.json`, `resultados/
 
 ## Resumen
 
-Se amplió el laboratorio virtual de protoboard y circuitos DC entregado en el curso hasta convertirlo en un laboratorio de circuitos R, C y L en el tiempo. El simulador final, un único archivo HTML sin dependencias, admite resistencias, capacitores, inductores, fuentes DC, una fuente variable y un generador de funciones (senoidal, cuadrada y triangular), todos sin límite de cantidad, junto con voltímetros, amperímetros y sondas de un osciloscopio de 10 × 8 divisiones con disparo, cursores y exportación. El cálculo se hace con un motor de análisis nodal modificado (MNA) con modelos compañeros de Euler hacia atrás y trapezoidal, paso de tiempo elegido a partir de las frecuencias naturales del circuito y verificación por división del paso. La validación compara 99 magnitudes de tensión y corriente, medidas sobre 11 montajes que cubren las pruebas RC, RL, RLC, AC y DC, con fórmulas cerradas que incluyen las resistencias parásitas del montaje. Las 99 cumplen el criterio de 1 % en régimen estable, 2 % en transitorios y 0,5° en fase, con errores entre 10⁻⁶ y 0,1 %. Frente a la teoría ideal, las diferencias llegan al 71 % y se explican por la resistencia interna del generador y por la carga de los instrumentos. Los cuatro ejemplos originales reproducen el simulador base a menos de 10⁻¹¹.
+Se amplió el laboratorio virtual de protoboard y circuitos DC del curso hasta convertirlo en un laboratorio de circuitos R, C y L en el tiempo y en frecuencia. El simulador final, un único archivo HTML sin dependencias, admite resistencias, capacitores, inductores, fuentes DC, fuente variable y generador de funciones (senoidal, cuadrada y triangular), sin límite de cantidad, con voltímetros, amperímetros y un osciloscopio con disparo, cursores y exportación. El cálculo usa un motor de análisis nodal modificado (MNA) con modelos compañeros de Euler hacia atrás y trapezoidal, paso de tiempo elegido según las frecuencias naturales del circuito y verificado al dividirlo. La validación compara 99 magnitudes de tensión y corriente, medidas en 11 montajes de las familias RC, RL, RLC, AC y DC, con fórmulas cerradas que incluyen las resistencias parásitas del montaje. Las 99 cumplen el criterio de 1 % en régimen estable, 2 % en transitorios y 0,5° en fase, con errores entre 10⁻⁶ y 0,1 %. Frente a la teoría ideal las diferencias llegan al 71 %, por la resistencia interna del generador y la carga de los instrumentos. Los cuatro ejemplos originales reproducen el simulador base a menos de 10⁻¹¹.
 
 ---
 
@@ -111,7 +111,7 @@ flowchart LR
 * la sonda del osciloscopio es R_in = 1 MΩ;
 * el generador es una fuente ideal más su r_int.
 
-**Cambios en el código del base.** Se modificaron 13 funciones y no se eliminó ninguna; cada cambio está marcado `[incr. N]`. Por ejemplo, `buildNet` separa C, L y medidores, y `solveDC`/`solveOhm` resuelven con el motor conservando su firma. Las pruebas comparan el archivo final con el original y generan la lista de funciones modificadas. `gauss()` se conserva sin cambios y la prueba de regresión la usa (anexo C).
+**Cambios en el código del base.** Se modificaron 20 funciones y no se eliminó ninguna; cada cambio está marcado `[incr. N]`. Por ejemplo, `buildNet` separa C, L y medidores, y `solveDC`/`solveOhm` resuelven con el motor conservando su firma. Las pruebas comparan el archivo final con el original y generan la lista de funciones modificadas. `gauss()` se conserva sin cambios y la prueba de regresión la usa (anexo C).
 
 ### 3.2 Modelo numérico
 
@@ -148,6 +148,7 @@ Se conservó el estilo del base: tema oscuro, secciones plegables y la protoboar
   * modos de encendido y de disparo por nivel y pendiente;
   * cursores de tiempo y tensión arrastrables y medidas automáticas (Vpp, Vmedia, Vrms, f y fase);
   * capturas PNG y SVG y CSV de la pantalla.
+* **Barridos** (incrementos 9, 10 y 12): de la tensión de una fuente, del cursor de un potenciómetro y de la frecuencia de un generador, con gráfica, análisis y exportación a CSV y SVG. El botón «+ Fuente DC» agrega fuentes DC sin límite.
 * **Ejemplos del protocolo** (11 montajes), el panel **Protocolo de validación** y los **bancos de transitorios** con la solución analítica superpuesta.
 
 ## 4. Metodología de validación
@@ -266,6 +267,30 @@ Además se verificó, en las pruebas del motor:
 * **Ida y vuelta guardar → cargar:** idéntica en los 11 ejemplos (JSON, todas las tensiones de nodo y todas las trazas).
 * **Rendimiento:** 301 elementos (151 nodos) durante 20 000 pasos trapezoidales en 0,9–2,9 s, frente a un límite de 10 s.
 
+### 5.7 Funciones adicionales (incrementos 9 a 12)
+
+Cubierto el alcance base, se agregaron cuatro funciones. Cada una tiene sus propias pruebas, que corren con «Ejecutar pruebas del motor».
+
+* **Barrido de tensión** (19 pruebas). Recorre la tensión de una fuente y ajusta cada lectura a una recta. La pendiente de la corriente de la fuente es 1/R equivalente (ley de Ohm), la de una tensión es la ganancia de un divisor y la ordenada es el aporte de las otras fuentes (superposición).
+* **Potenciómetro y máxima transferencia de potencia** (21 pruebas). Con 10 V, R1 = 1 kΩ y un reóstato de 10 kΩ, la recta v_L–i_L da R_th = 1 000,459 Ω frente a 1 000,460 Ω de la teoría del montaje. La potencia máxima medida es 24,9832 mW frente a V_th²/(4R_th) = 24,9835 mW (0,001 %), con R_L = R_th.
+* **Dos mallas, tres puentes y dos resistencias** (10 pruebas). Con 12 V, R1 = 1 kΩ y R2 = 2,2 kΩ, el análisis de mallas da I1 = 17,4545 mA, I2 = 5,4545 mA e I1 − I2 = 12 mA. El simulador lee 17,4387 mA, 5,4502 mA y 11,9885 mA (0,08 a 0,10 % menos, por la r interna, los cables y los shunts). El residuo de la ley de nodos con las lecturas es 4·10⁻⁵ %.
+* **Barrido de frecuencia** (47 pruebas). Resuelve el montaje en régimen senoidal permanente con las mismas ecuaciones del motor en forma fasorial (R → 1/R, C → jωC, L → jωL) y obtiene de la curva el pico, las frecuencias de corte a −3 dB, el ancho de banda y Q.
+
+| Circuito | Magnitud | Barrido | Teoría | Diferencia |
+|---|---|---|---|---|
+| RLC serie (R = 20 Ω, fuente ideal) | f0 = 1/(2π√(LC)) | 1 591,547 Hz | 1 591,549 Hz | 0,0002 % |
+| | ancho de banda = R/(2πL) | 318,37 Hz | 318,31 Hz | 0,017 % |
+| | Q = f0/(f2 − f1) | 4,9991 | 5 | 0,018 % |
+| | fase de la corriente en f1 y f2 | 44,996° y −44,994° | +45° y −45° | < 0,006° |
+| P4b (generador real de 50 Ω) | corriente en el pico | 14,280 mA | V/(R + r_int) = 14,286 mA | 0,04 % |
+| | Q | 1,428 | √(L/C)/(R + r_int) = 1,429 | 0,04 % |
+| Filtro RC | f_c de v_C (pasa-bajas) y de v_R (pasa-altas) | 159,156 Hz | 159,155 Hz | 0,0006 % |
+| RLC paralelo (ejemplo nuevo) | f0 | 1 591,36 Hz | 1 591,55 Hz | 0,012 % |
+| | Q = R_eq·√(C/L) | 5,098 | 5,119 | 0,42 % |
+| | i_L / i del generador en f0 | 9,93 | 9,97 | 0,39 % |
+
+El análisis fasorial y la simulación en el tiempo son dos métodos independientes. En el RLC serie a 1 200 Hz coinciden a 0,004 % en la amplitud y a 0,001° en la fase. En el RLC paralelo, la teoría de la tabla no incluye los cables de 0,02 Ω en serie con L y con C, que bajan Q un 0,4 %.
+
 ## 6. Análisis y discusión
 
 **Constante de tiempo.** En P1a el motor reproduce τ con un error de 10⁻⁴ en la teoría que incluye la fuente real. El 0,054 % que lo separa de RC corresponde exactamente a la r interna de 0,5 Ω y a los cables (0,54 Ω frente a 1 kΩ), más la sonda de 1 MΩ en paralelo con C. Las variaciones de τ en P1b (+4,9 %) y P2b (−33 %) tienen la misma causa: la resistencia del generador (50 Ω) forma parte del circuito y entra en τ = (R + r)·C y en τ = L/(R + r). En un laboratorio real, la constante de tiempo medida con un generador de 50 Ω **no** es RC. Si se compara con la teoría ideal, la discrepancia se debe a la fuente y no al circuito.
@@ -273,6 +298,8 @@ Además se verificó, en las pruebas del motor:
 **Amortiguamiento.** En P3a la teoría ideal predice α = 1 000 s⁻¹ y el montaje da 1 027 s⁻¹ (2,8 % más), porque los 0,54 Ω de la fuente y los cables se suman a los 20 Ω de R. Con resistencias tan pequeñas, cualquier resistencia en serie cambia apreciablemente el amortiguamiento y Q: en una bobina real, la resistencia del alambre, que nuestro modelo no incluye, tendría un efecto mayor. El **crítico** de P3b resulta apenas sobreamortiguado (α′/ω0′ = 1,0025). El amortiguamiento crítico es una condición frágil: en la práctica siempre es aproximado.
 
 **Resonancia e impedancia.** P4b es el caso más instructivo. En f0, Z_L + Z_C = 0 y la impedancia del RLC es solo R = 20 Ω. El generador real, de 50 Ω, entrega entonces en sus bornes 1·20/70 ≈ 0,286 V, el 71 % menos que el valor nominal. La relación v_C/v_bornes sigue siendo Q ≈ 5 (error de 0,15 % frente al ideal) y la corriente queda en fase con la tensión de bornes (−0,019°). La lección es de medición: hay que medir la entrada en los bornes (CH1) y no suponer la amplitud nominal. En P4c ocurre lo mismo con un efecto menor (23 %): las fases relativas a los bornes coinciden con el ideal a 0,01°, porque el divisor desde los bornes no depende de r_int.
+
+**Barrido cerca de la resonancia.** En el RLC serie la corriente es máxima en f0 y queda en fase con la tensión. Por debajo de f0 domina el capacitor y la corriente adelanta (+45° en f1); por encima domina el inductor y atrasa (−45° en f2). El ancho de banda es R/(2πL): al pasar de la fuente ideal al generador de 50 Ω, Q baja de 5 a 1,43 y la resonancia se ensancha. El RLC paralelo es el caso dual: en f0 las corrientes de L y de C son iguales y opuestas, la tensión del tanque es máxima y dentro de él circula una corriente unas 10 veces mayor que la que entrega el generador.
 
 **Fase.** Las fases se midieron por DFT y por el retardo entre cruces por cero, con errores ≤ 0,02°. La sonda de 1 MΩ en paralelo con C corre la fase del filtro 0,028° en f_c (−44,972° en vez de −45°), un efecto pequeño pero medible que la teoría del montaje reproduce.
 
@@ -308,9 +335,9 @@ Además se verificó, en las pruebas del motor:
 **Trabajo futuro:**
 
 * modelo de bobina real (resistencia de alambre) y de capacitor con fuga, con su efecto en Q;
-* extras opcionales: diagrama de Bode, modo X-Y para figuras de Lissajous, y medición de potencia y energía en el osciloscopio;
+* extras opcionales: escala en decibelios (diagrama de Bode) en el barrido de frecuencia, modo X-Y para figuras de Lissajous, y medición de potencia y energía en el osciloscopio;
 * ruido opcional en los medidores nuevos;
-* comparación con medidas tomadas en el laboratorio real del curso, cuya columna debe llenar el grupo.
+* comparación con medidas tomadas en el laboratorio real del curso.
 
 ## Referencias
 
@@ -342,11 +369,11 @@ Además se verificó, en las pruebas del motor:
 
 ## Anexos
 
-**A. Tablas de datos.** `resultados/validacion.md`: las 99 magnitudes de los 11 montajes, con simulado, teoría del montaje, error, criterio, teoría ideal y error frente al ideal. `resultados/pruebas_motor.md`: las 308 pruebas del motor frente a la teoría y las 86 de regresión. `resultados/osciloscopio/<id>.csv`: datos en el tiempo de cada pantalla.
+**A. Tablas de datos.** `resultados/validacion.md`: las 99 magnitudes de los 11 montajes, con simulado, teoría del montaje, error, criterio, teoría ideal y error frente al ideal. `resultados/pruebas_motor.md`: las 308 pruebas del motor frente a la teoría y las 143 de regresión y de los incrementos 11 y 12. `resultados/osciloscopio/<id>.csv`: datos en el tiempo de cada pantalla.
 
 **B. Capturas del osciloscopio.** `resultados/osciloscopio/<id>.svg` (P1a … P4c) y `resultados/osciloscopio/README.md`, con las medidas automáticas de cada captura.
 
-**C. Cambios en el código del base.** Funciones modificadas: `buildNet`, `solveDC`, `solveOhm`, `drawTray`, `drawRes`, `drawOver`, `drawFlow`, `renderReadings`, `renderAnalysis`, `down`, `buildRPanel`, `updateRLabels` y `bind`. Ninguna eliminada. Lista generada en `resultados/pruebas_motor.md`, sección C. El detalle de cada cambio, con su motivo y su verificación, está en `docs/00_analisis_y_plan.md`, sección 6.9.
+**C. Cambios en el código del base.** Funciones modificadas: `buildNet`, `solveDC`, `solveOhm`, `occ`, `drawSources`, `drawTray`, `drawRes`, `drawOver`, `drawFlow`, `renderReadings`, `renderAnalysis`, `pairFor`, `placeRes`, `down`, `move`, `buildSwatches`, `buildSrcPanel`, `buildRPanel`, `updateRLabels` y `bind`. Ninguna eliminada. Lista generada en `resultados/pruebas_motor.md`, sección C. El detalle de cada cambio, con su motivo y su verificación, está en `docs/00_analisis_y_plan.md`, sección 6.9.
 
 **D. Cálculos teóricos.** Las fórmulas de la teoría del montaje están en `plan_validacion.md` (sección 3) y en el bloque `validacion-protocolo` de `simulador.html`. Su derivación paso a paso está en `guia_de_estudio.md`.
 

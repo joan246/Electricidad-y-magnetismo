@@ -30,7 +30,8 @@ La pantalla tiene dos zonas:
   * **+ Resistencia** (con bandas, como las del base);
   * **+ Capacitor** (1 pF a 1 F) y **+ Inductor** (1 µH a 10 H);
   * **+ Potenciómetro** (10 Ω a 10 MΩ, sección 2.5);
-  * **+ Voltímetro**, **+ Amperímetro**, **+ Generador** y **+ Sonda (canal)**.
+  * **+ Voltímetro**, **+ Amperímetro**, **+ Generador** y **+ Sonda (canal)**;
+  * **+ Fuente DC** (incremento 12): una fuente DC adicional, sin límite de cantidad. Empieza en 5 V con 0,5 Ω internos y se ajusta en su tarjeta (nivel DC y r interna).
 * El componente nuevo aparece en la **bandeja** de la derecha. Las flechas ◀ ▶ cambian de página cuando no caben todos.
 * **Arrastra** el componente desde la bandeja al protoboard. «Colocación» decide la orientación:
   * **horizontal:** a lo largo de una franja, con el paso de columnas elegido;
@@ -182,6 +183,32 @@ En cada punto se leen R<sub>AC</sub>, V<sub>AC</sub>, V<sub>CB</sub>, I<sub>AC</
 * **Máxima transferencia:** «Potenciómetro · máxima transferencia». Es la fuente de 10 V con R1 = 1 kΩ y POT1 de 10 kΩ como reóstato. Barre con 101 puntos: el máximo (≈ 25 mW) está con el cursor en ≈ 9,9 %, es decir, R<sub>AC</sub> ≈ 1 kΩ = R<sub>th</sub>.
 * **Efecto de carga:** «Potenciómetro · divisor». Barre una vez con VM1 en 10 MΩ y otra con VM1 en 10 kΩ, y compara la gráfica de VM1 y la desviación del análisis.
 
+## 4C. Barrido de frecuencia · resonancia y filtros (incremento 12)
+
+La tarjeta **«Barrido de frecuencia»** recorre la frecuencia de un generador del protoboard y, en cada una, calcula el montaje en régimen senoidal permanente. No cambia el montaje ni necesita esperar a que pase el transitorio.
+
+1. Coloca un generador (o carga un ejemplo que lo tenga) y elígelo en «Generador».
+2. Escribe la frecuencia inicial, la final y el número de puntos. La escala logarítmica reparte los puntos por igual en cada década; la lineal sirve para mirar de cerca una resonancia.
+3. Pulsa **«Ejecutar barrido»**.
+4. En «Magnitud de la gráfica» elige qué ver: una sonda, un medidor agregado, la corriente que entrega el generador o la tensión y la corriente de cualquier R, C o L.
+
+La gráfica muestra arriba la **amplitud** y abajo la **fase** respecto al generador. El cuadro de análisis da:
+
+* **Frecuencia del pico f₀:** la de resonancia.
+* **Frecuencias de corte:** donde la amplitud baja a pico/√2 (−3 dB), con la fase en cada una.
+* **Ancho de banda** f₂ − f₁ y **factor de calidad** Q = f₀/(f₂ − f₁).
+* **Tipo de respuesta:** pasa-banda, pasa-bajas o pasa-altas.
+
+«CSV» guarda la amplitud y la fase de todas las magnitudes; «Capturar SVG» guarda la gráfica; «Anotar en el registro» escribe el resultado en el registro de medidas.
+
+Si el generador está en forma cuadrada o triangular, el barrido usa una senoidal de su amplitud y lo avisa. Las fuentes DC y los demás generadores no aportan a la frecuencia del barrido.
+
+**Recetas rápidas**
+
+* **Resonancia serie:** carga «P4b · RLC serie en resonancia» y barre de 500 Hz a 5 kHz con la magnitud «I que entrega GEN1». El pico (14,3 mA) está en 1,59 kHz con la corriente en fase; la fase vale +45° en f₁ y −45° en f₂. Q ≈ 1,43, porque los 50 Ω del generador se suman a R.
+* **Resonancia paralelo:** el ejemplo «RLC paralelo · resonancia» ejecuta el barrido solo. La tensión del tanque (CH2) es máxima en 1,59 kHz, con Q ≈ 5,1.
+* **Filtro RC:** carga «P4a», barre de 10 Hz a 10 kHz y mira CH2: es un pasa-bajas con el corte en ≈ 152 Hz y −45° de fase. No da 159 Hz porque los 50 Ω del generador se suman a R: f_c = 1/(2π(R + r_int)C).
+
 ## 5. Ejemplos
 
 En «Circuitos de ejemplo»:
@@ -192,6 +219,7 @@ En «Circuitos de ejemplo»:
   * Puente 1 (amarillo): del riel positivo al amperímetro AM1. Puente 2 (azul): del nodo A a la rama de R2. Puente 3 (amarillo): de R2 de vuelta al nodo B.
   * AM1 lee la corriente de la fuente (17,44 mA), AM2 la de R2 (5,45 mA) y AM3 la de R1 (11,99 mA). VM1 y VM2 leen la tensión de cada resistencia (11,99 V).
   * Sirve para comprobar las leyes de Kirchhoff: AM1 = AM2 + AM3 en el nodo A, y la misma tensión en las dos ramas.
+* **RLC paralelo · resonancia** (incremento 12): generador senoidal de 1 V en f₀ → 1 kΩ → L (10 mH) ‖ C (1 µF) ‖ 1 kΩ, con CH1 en el generador y CH2 en el tanque. Configura el osciloscopio y ejecuta el barrido de frecuencia.
 * **Potenciómetro · divisor** y **Potenciómetro · máxima transferencia** (incremento 10): arman el montaje y preparan el barrido del cursor.
 * **Ejemplos del protocolo de validación:** los 11 montajes P1a … P5. Arman el circuito, con las resistencias en su valor nominal, y configuran el osciloscopio.
 
@@ -230,10 +258,12 @@ Obtienes la gráfica, la tabla «comparación con la teoría» y la «verificaci
     * divisor frente a la teoría del montaje y efecto de carga frente a la fórmula exacta;
     * máxima transferencia: V<sub>th</sub> y R<sub>th</sub> a < 10⁻³ %, P<sub>máx</sub> a < 0,01 %;
     * avisos y colocación.
+  * las 10 pruebas del ejemplo de dos mallas (incremento 11) frente al análisis de mallas;
+  * las 47 pruebas del barrido de frecuencia (incremento 12): análisis fasorial frente a la teoría y al transitorio, resonancia serie, filtros y RLC paralelo en el protoboard.
   * Las pruebas de los incrementos 9 y 10 solo corren en el navegador.
 * **«Protocolo de validación P1–P5 → Ejecutar validación»** mide 99 magnitudes en los 11 montajes y las compara con la *teoría del montaje* (contra la que se aplica el criterio) y con la *teoría ideal*. «Ver en el protoboard» abre cada montaje.
 * Las dos restauran tu montaje al terminar.
-* En una terminal, desde la carpeta `simulador_EM` (requiere Node.js 18 o superior):
+* En una terminal, desde la carpeta del proyecto (requiere Node.js 18 o superior):
 
   ```bash
   node pruebas/ejecutar_pruebas.js

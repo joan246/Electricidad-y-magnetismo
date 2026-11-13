@@ -101,6 +101,23 @@ Convenciones:
 * Se agregaron al repositorio las carpetas `base/`, `pruebas/`, `ejemplos/`, `resultados/` y `docs/`, que el README citaba pero no se habían subido.
 * Estado: 308/308 del motor, 96/96 de regresión (las 86 anteriores más las 10 del ejemplo nuevo) y 99/99 de la validación en Node; 405 comprobaciones sin fallas en el navegador, sin errores en la consola.
 
+### 12-nov-2026 · Incremento 12: fuente DC adicional, RLC paralelo y barrido de frecuencia (Joan Hinestroza, con IA)
+* **Motivo:** al comparar el proyecto con la guía quedaban tres vacíos: fuentes DC en cualquier número, un ejemplo RLC paralelo y el barrido de frecuencia cerca de la resonancia.
+* **«+ Fuente DC»:** crea un generador en forma DC con 0,5 Ω internos. **Decisión:** no se agregó un tipo nuevo de componente; así el formato JSON no cambia y las 3 fuentes del banco quedan como estaban.
+* **Régimen senoidal** (`MotorMNA.resolverAC`): las ecuaciones del MNA con fasores (R → 1/R, C → jωC, L → rama con jωL).
+  * **Decisión:** el sistema complejo se resuelve como uno real del doble de tamaño, con la misma factorización LU del motor. No hizo falta escribir aritmética compleja en el solver.
+  * **Decisión:** el inductor lleva una rama propia (v − jωL·i = 0) para no dividir por ωL.
+* **Barrido de frecuencia** (`BarridoFrecuencia`, `PanelFrecuencia`): amplitud y fase frente a f, pico por parábola de 3 puntos, cortes a −3 dB por interpolación, ancho de banda y Q.
+* **Ejemplo «RLC paralelo · resonancia»**, fuera de `EJEMPLOS` para no cambiar los 11 montajes del protocolo.
+* **Problema:** en la gráfica, los rótulos de f0 y f1 quedaban uno sobre otro cuando Q es alto. **Solución:** f1 se rotula hacia la izquierda y en otro renglón.
+* 47 pruebas nuevas:
+  * fasorial frente a la teoría: RC en f_c y RLC serie en f0, iguales en las 7 cifras que muestra la tabla;
+  * fasorial frente al transitorio trapezoidal a 1 200 Hz: 0,004 % en amplitud y 0,001° en fase (dos métodos independientes);
+  * barrido del RLC serie: f0 a 0,0002 %, ancho de banda y Q a 0,02 %, fase de ±45° en los cortes a 0,006°;
+  * filtros RC: corte de v_C y de v_R en 159,156 Hz (0,0006 %);
+  * RLC paralelo en el protoboard frente a la teoría del montaje (≤ 0,42 %, por los cables de 0,02 Ω que la fórmula no incluye) y frente al osciloscopio (0,001 % en amplitud y 0,02° en fase).
+* Estado: 308/308 del motor, 143/143 de regresión y 99/99 de la validación en Node; 452 comprobaciones sin fallas en el navegador, sin errores en la consola.
+
 ---
 
 ## 2. Reuniones del grupo [completar]
@@ -140,4 +157,4 @@ Lo que cada integrante comprobó por su cuenta: por ejemplo, el cálculo a mano 
 | 14 a 20-oct-2026 | Claude (Anthropic), Claude Code | análisis del base, código del motor, interfaz, pruebas y borradores de los documentos | [completar: qué revisó cada integrante] |
 | 30-oct-2026 | Claude (Anthropic) | prueba del simulador, corrección del deslizador de las fuentes, incremento 9 (barrido de tensión), sus pruebas y la documentación | [completar: qué revisó Miguel] |
 | 31-oct-2026 | Claude (Anthropic) | incremento 10 (potenciómetro, barrido del cursor, máxima transferencia y efecto de carga), sus pruebas y la documentación | [completar: qué revisó Miguel] |
-| 12-nov-2026 | Claude (Anthropic), Claude Code | recuperación del incremento 10, incremento 11 (ejemplo de dos mallas, 3 puentes y 2 resistencias), sus pruebas, la documentación y la evaluación frente a la rúbrica | [completar: qué revisó Joan] |
+| 12-nov-2026 | Claude (Anthropic), Claude Code | recuperación del incremento 10, incremento 11 (ejemplo de dos mallas, 3 puentes y 2 resistencias), sus pruebas, la documentación y la comparación con la guía del proyecto; incremento 12 (fuente DC adicional, RLC paralelo, régimen senoidal y barrido de frecuencia) | [completar: qué revisó Joan] |
