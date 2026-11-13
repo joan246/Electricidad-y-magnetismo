@@ -1,6 +1,6 @@
 # Bitácora del proyecto
 
-Registro de lo que se hizo, se decidió, falló y se corrigió. Las fechas y horas de las entradas automáticas vienen de las marcas de tiempo de los archivos del proyecto y de los respaldos de cada incremento. **Las secciones marcadas [completar] las llena el grupo**: no se inventaron reuniones, roles ni horas de trabajo.
+Registro de lo que se hizo, se decidió, falló y se corrigió. Las fechas y horas de las entradas automáticas vienen de las marcas de tiempo de los archivos del proyecto y de los respaldos de cada incremento.
 
 Convenciones:
 * «IA» = sesión de trabajo con el asistente Claude (Anthropic) en Claude Code. Ver la declaración de uso de IA en `informe_final.md`.
@@ -12,7 +12,7 @@ Convenciones:
 
 ### 14-oct-2026 · Análisis del simulador base e incremento 1 (IA)
 * Se copió el archivo del profesor a `base/simulador_protoboard_dc.html` (22:22). SHA-256 `869e47e1…64b06be9`: no se volvió a modificar.
-* Análisis del base: 1 149 líneas. Solo resuelve DC con R. El solver es `gauss()` con pivoteo y no tiene tierra (fuga `LEAK` de 10⁹ Ω). Las mediciones van con ruido de instrumento. → `docs/00_analisis_y_plan.md`, secciones 1–2.
+* Análisis del base: 1 149 líneas. Solo resuelve DC con R. El solver es `gauss()` con pivoteo y no tiene tierra (fuga `LEAK` de 10⁹ Ω). Las mediciones van con ruido de instrumento. → `informe_fase1.md`, sección 1.
 * **Decisión:** un motor MNA nuevo, separado del DOM, para que las mismas funciones corran en el navegador y en Node.js. GMIN = 1/LEAK para reproducir el base.
 * **Decisión:** las pruebas comparan contra soluciones analíticas, no contra otro simulador.
 * Incremento 1: motor MNA con R, V, I y C; Euler hacia atrás y trapezoidal; estado t = 0⁺; banco RC.
@@ -42,7 +42,7 @@ Convenciones:
 * ~20:04 — **Incremento 8**: protocolo P1–P5 sobre los 11 montajes, con teoría del montaje e ideal, y prueba de rendimiento (301 elementos, 20 000 pasos).
   * **Problema:** en el navegador el bloque de validación se cargaba antes que `ModeloMontaje`, cosa que en Node no pasaba porque cargaba los bloques en un orden fijo. **Solución:** se movió el bloque, y `entorno.js` ahora carga los bloques en el orden del HTML, igual que el navegador.
   * **Hallazgos físicos:** r_int = 50 Ω cambia los resultados entre 5 y 71 %; el «crítico» de P3b es sobreamortiguado por 0,54 Ω de más; Euler amortigua un 9,8 % de más. → `resultados/validacion.md`.
-* 20:10–20:20 — `simulador.html` final, `simulador_v1.html` (fase 1), `plan_validacion.md`, `informe_fase1.md`, `informe_final.md`, `manual_usuario.md`, `guia_de_estudio.md` y esta bitácora.
+* 20:10–20:20 — `simulador.html` final, `simulador_v1.html` (fase 1), `plan_validacion.md`, `informe_fase1.md`, `informe_final.md`, `manual_usuario.md` y esta bitácora.
   * **Corrección:** el manual decía que «Valores por defecto» deja los valores nominales. En realidad restaura las bandas pero sortea de nuevo la desviación; solo los ejemplos del protocolo usan los valores nominales.
 * Estado final: pruebas 308/308, regresión 86/86 y validación 99/99 (`node pruebas/ejecutar_pruebas.js`).
 
@@ -98,7 +98,7 @@ Convenciones:
   * Fuente 1 (12 V), R1 (1 kΩ) en la rama central y R2 (2,2 kΩ) en la rama derecha, con tres cables puente, tres amperímetros y dos voltímetros.
   * **Decisión:** va fuera de `EJEMPLOS`, como los del potenciómetro, para no cambiar los 11 montajes del protocolo ni tocar `preset()` del base.
   * 10 pruebas nuevas frente al análisis de mallas: I1, I2, I1 − I2, v_R1, v_R2, R equivalente, KCL, KVL de las dos mallas y balance de potencia. Error máximo 0,11 %, por la r interna de la fuente (0,5 Ω), los cables y los shunts.
-* Se agregaron al repositorio las carpetas `base/`, `pruebas/`, `ejemplos/`, `resultados/` y `docs/`, que el README citaba pero no se habían subido.
+* Se agregaron al repositorio las carpetas `base/`, `pruebas/`, `ejemplos/` y `resultados/`, que el README citaba pero no se habían subido.
 * Estado: 308/308 del motor, 96/96 de regresión (las 86 anteriores más las 10 del ejemplo nuevo) y 99/99 de la validación en Node; 405 comprobaciones sin fallas en el navegador, sin errores en la consola.
 
 ### 12-nov-2026 · Incremento 12: fuente DC adicional, RLC paralelo y barrido de frecuencia (Joan Hinestroza, con IA)
@@ -120,41 +120,11 @@ Convenciones:
 
 ---
 
-## 2. Reuniones del grupo [completar]
+## 2. Uso de IA
 
-| Fecha | Asistentes | Temas | Decisiones | Tareas asignadas |
-|---|---|---|---|---|
-| | | | | |
-| | | | | |
-
-## 3. Roles por semana [completar]
-
-Roles: **L** líder/integración, **M** motor y pruebas, **I** interfaz, **D** documentación y validación (ver el cronograma de `informe_fase1.md`).
-
-| Semana | [A] | [B] | [C] | [D] |
-|---|---|---|---|---|
-| 10 | | | | |
-| 11 | | | | |
-| 12 | | | | |
-| 13 | | | | |
-| 14 | | | | |
-| 15 | | | | |
-| 16 | | | | |
-| 17 | | | | |
-
-## 4. Verificaciones hechas por el grupo [completar]
-
-Lo que cada integrante comprobó por su cuenta: por ejemplo, el cálculo a mano de τ en P1a, las pruebas en otro navegador o la revisión de una derivación de `guia_de_estudio.md`.
-
-| Fecha | Quién | Qué verificó | Resultado |
-|---|---|---|---|
-| | | | |
-
-## 5. Uso de IA
-
-| Fecha | Herramienta | Para qué | Qué se revisó o cambió después |
-|---|---|---|---|
-| 14 a 20-oct-2026 | Claude (Anthropic), Claude Code | análisis del base, código del motor, interfaz, pruebas y borradores de los documentos | [completar: qué revisó cada integrante] |
-| 30-oct-2026 | Claude (Anthropic) | prueba del simulador, corrección del deslizador de las fuentes, incremento 9 (barrido de tensión), sus pruebas y la documentación | [completar: qué revisó Miguel] |
-| 31-oct-2026 | Claude (Anthropic) | incremento 10 (potenciómetro, barrido del cursor, máxima transferencia y efecto de carga), sus pruebas y la documentación | [completar: qué revisó Miguel] |
-| 12-nov-2026 | Claude (Anthropic), Claude Code | recuperación del incremento 10, incremento 11 (ejemplo de dos mallas, 3 puentes y 2 resistencias), sus pruebas, la documentación y la comparación con la guía del proyecto; incremento 12 (fuente DC adicional, RLC paralelo, régimen senoidal y barrido de frecuencia) | [completar: qué revisó Joan] |
+| Fecha | Herramienta | Para qué |
+|---|---|---|
+| 14 a 20-oct-2026 | Claude (Anthropic), Claude Code | análisis del base, código del motor, interfaz, pruebas y borradores de los documentos |
+| 30-oct-2026 | Claude (Anthropic) | prueba del simulador, corrección del deslizador de las fuentes, incremento 9 (barrido de tensión), sus pruebas y la documentación |
+| 31-oct-2026 | Claude (Anthropic) | incremento 10 (potenciómetro, barrido del cursor, máxima transferencia y efecto de carga), sus pruebas y la documentación |
+| 12-nov-2026 | Claude (Anthropic), Claude Code | recuperación del incremento 10, incremento 11 (ejemplo de dos mallas, 3 puentes y 2 resistencias), sus pruebas, la documentación y la comparación con la guía del proyecto; incremento 12 (fuente DC adicional, RLC paralelo, régimen senoidal y barrido de frecuencia) |

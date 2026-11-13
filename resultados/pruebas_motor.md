@@ -1,9 +1,9 @@
 # Resultados de las pruebas del motor — incrementos 1 a 12
 
-Generado automáticamente por `pruebas/ejecutar_pruebas.js` el 2026-11-12T22:57:40.816Z con Node v22.21.1.
+Generado automáticamente por `pruebas/ejecutar_pruebas.js` el 2026-11-13T04:52:44.389Z con Node v22.21.1.
 Todos los valores "motor" son **calculados por el motor** (no son medidas de laboratorio). Los valores "teórico" son la **solución analítica de referencia**.
 
-**Resumen:** pruebas del motor 308/308 · regresión del base 143/143 · protocolo P1–P5 99/99 · rendimiento cumple · tiempo 2226 ms
+**Resumen:** pruebas del motor 308/308 · regresión del base 143/143 · protocolo P1–P5 99/99 · rendimiento cumple · tiempo 1843 ms
 
 ## A. Motor frente a la teoría
 
@@ -455,8 +455,8 @@ Todos los valores "motor" son **calculados por el motor** (no son medidas de lab
 | Magnitud | Motor | Teórico | Unidad | Error | Criterio | ¿Cumple? |
 |---|---|---|---|---|---|---|
 | 300 C y L: ids únicos y JSON de ida y vuelta | 300 | 300 |  | — |  | ✅ |
-| escalera de 401 elementos: punto de operación DC (ms) | 30 | resuelve |  | — | tiempo informativo | ✅ |
-| escalera de 401 elementos: 10000 pasos trapezoidales (ms) | 1347 | resuelve |  | — | tiempo informativo (RNF-06) | ✅ |
+| escalera de 401 elementos: punto de operación DC (ms) | 21 | resuelve |  | — | tiempo informativo | ✅ |
+| escalera de 401 elementos: 10000 pasos trapezoidales (ms) | 1089 | resuelve |  | — | tiempo informativo (RNF-06) | ✅ |
 
 ### P5 dos mallas, dos fuentes (V1 = 12 V, V2 = 5 V, R1 = 1 kΩ, R2 = 2,2 kΩ, R3 = 3,3 kΩ) · DC
 
@@ -755,4 +755,4 @@ Bloques de primer nivel del `<script>` del base: **83 sin cambios**, **20 modifi
 
 ## D. Protocolo de validación P1–P5 (incremento 8)
 
-99/99 magnitudes de los 11 montajes del protocolo cumplen el criterio frente a la teoría del montaje. Tablas completas, con la teoría ideal y las capturas: `resultados/validacion.md`. Rendimiento: 301 elementos × 20000 pasos en 5,51 s (límite 10 s).
+99/99 magnitudes de los 11 montajes del protocolo cumplen el criterio frente a la teoría del montaje. Tablas completas, con la teoría ideal y las capturas: `resultados/validacion.md`. Rendimiento: 301 elementos × 20000 pasos en 1,35 s (límite 10 s).

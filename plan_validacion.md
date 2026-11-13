@@ -1,7 +1,6 @@
 # Plan de validación del laboratorio virtual R, C, L
 
 Electricidad y Magnetismo · 2026-2 · Pontificia Universidad Javeriana Cali
-Grupo: [NOMBRES DE LOS INTEGRANTES]
 
 Este plan define qué circuitos se arman, con qué valores, qué magnitudes se miden, cómo se miden y con qué criterio se acepta el resultado. Cada prueba tiene un montaje guardado en `ejemplos/<id>.json` y se ejecuta de tres formas que dan el mismo resultado:
 
@@ -87,7 +86,7 @@ Una red de 301 elementos (escalera de 75 tramos R–L–C–R) se simula 20 000 
 
 ---
 
-## 3. Fórmulas de la teoría del montaje (resumen; derivación en `guia_de_estudio.md`)
+## 3. Fórmulas de la teoría del montaje (resumen)
 
 * **Thévenin de una fuente real con una sonda en sus bornes:** k = R_in/(R_in + r), R = r ‖ R_in.
 * **1.er orden con onda cuadrada de niveles Hi y Lo** (D = ciclo útil, q1 = e^(−D·T/τ), q2 = e^(−(1−D)·T/τ)):

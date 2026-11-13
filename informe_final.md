@@ -5,11 +5,7 @@
 Electricidad y Magnetismo · Periodo 2026-2
 Pontificia Universidad Javeriana Cali · Facultad de Ingeniería y Ciencias
 
-**Integrantes:** [NOMBRES DE LOS INTEGRANTES]
-**Profesor:** [NOMBRE DEL PROFESOR]
-**Fecha:** [FECHA DE ENTREGA, semana 16/17]
-
-Entregables: `simulador.html` (simulador final), `ejemplos/*.json`, `resultados/`, `manual_usuario.md`, `guia_de_estudio.md`, `bitacora.md`, `README.md`
+Entregables: `simulador.html` (simulador final), `ejemplos/*.json`, `resultados/`, `manual_usuario.md`, `bitacora.md`, `README.md`
 
 ---
 
@@ -373,9 +369,9 @@ El análisis fasorial y la simulación en el tiempo son dos métodos independien
 
 **B. Capturas del osciloscopio.** `resultados/osciloscopio/<id>.svg` (P1a … P4c) y `resultados/osciloscopio/README.md`, con las medidas automáticas de cada captura.
 
-**C. Cambios en el código del base.** Funciones modificadas: `buildNet`, `solveDC`, `solveOhm`, `occ`, `drawSources`, `drawTray`, `drawRes`, `drawOver`, `drawFlow`, `renderReadings`, `renderAnalysis`, `pairFor`, `placeRes`, `down`, `move`, `buildSwatches`, `buildSrcPanel`, `buildRPanel`, `updateRLabels` y `bind`. Ninguna eliminada. Lista generada en `resultados/pruebas_motor.md`, sección C. El detalle de cada cambio, con su motivo y su verificación, está en `docs/00_analisis_y_plan.md`, sección 6.9.
+**C. Cambios en el código del base.** Funciones modificadas: `buildNet`, `solveDC`, `solveOhm`, `occ`, `drawSources`, `drawTray`, `drawRes`, `drawOver`, `drawFlow`, `renderReadings`, `renderAnalysis`, `pairFor`, `placeRes`, `down`, `move`, `buildSwatches`, `buildSrcPanel`, `buildRPanel`, `updateRLabels` y `bind`. Ninguna eliminada. Lista generada en `resultados/pruebas_motor.md`, sección C.
 
-**D. Cálculos teóricos.** Las fórmulas de la teoría del montaje están en `plan_validacion.md` (sección 3) y en el bloque `validacion-protocolo` de `simulador.html`. Su derivación paso a paso está en `guia_de_estudio.md`.
+**D. Cálculos teóricos.** Las fórmulas de la teoría del montaje están en `plan_validacion.md` (sección 3) y en el bloque `validacion-protocolo` de `simulador.html`.
 
 **E. Declaración de uso de IA.** El desarrollo contó con la asistencia de un modelo de lenguaje (Claude, Anthropic [12]) en:
 
@@ -383,4 +379,4 @@ El análisis fasorial y la simulación en el tiempo son dos métodos independien
 * la generación de borradores del motor, del modelo, del osciloscopio, de la interfaz y de las pruebas;
 * la redacción de la documentación.
 
-Cada resultado numérico de este informe proviene de pruebas automáticas ejecutadas sobre el código entregado. No se inventaron datos ni medidas de laboratorio. El grupo es responsable de revisar, entender y defender cada parte (ver `guia_de_estudio.md`).
+Cada resultado numérico de este informe proviene de pruebas automáticas ejecutadas sobre el código entregado. No se inventaron datos ni medidas de laboratorio. El grupo es responsable de revisar, entender y defender cada parte.

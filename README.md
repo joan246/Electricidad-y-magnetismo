@@ -13,9 +13,7 @@ Ampliación del simulador `simulador_protoboard_dc.html` del curso a un laborato
 | `plan_validacion.md` | protocolo P1–P5, criterios y primer resultado (RC) |
 | `informe_final.md` | informe final (Fase 2) con resultados, análisis y anexos |
 | `manual_usuario.md` | manual de uso del simulador |
-| `guia_de_estudio.md` | explicación de cada bloque de código y ecuación, preguntas de sustentación |
 | `bitacora.md` | registro del trabajo, decisiones, errores y correcciones |
-| `docs/00_analisis_y_plan.md` | análisis del base, requisitos, modelo, arquitectura, plan y evidencia por incremento |
 | `ejemplos/*.json` | los 11 montajes del protocolo (P1a … P5) con los ajustes del osciloscopio; se abren con «Cargar circuito» |
 | `resultados/pruebas_motor.md` | resultados de las pruebas del motor y de la regresión (lo genera el script) |
 | `resultados/validacion.md` | protocolo P1–P5: tablas de V e I de los 11 montajes, frente a la teoría del montaje y a la ideal |

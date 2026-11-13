@@ -1,10 +1,10 @@
 # Laboratorio virtual de circuitos R, C y L — Informe de la Fase 1
 
 **Electricidad y Magnetismo · 2026-2 · Pontificia Universidad Javeriana Cali**
-**Grupo:** [NOMBRES DE LOS INTEGRANTES] · **Entrega:** semana 12
+**Entrega:** semana 12
 **Prototipo:** `simulador_v1.html` (incrementos 1–5) · **Pruebas:** botón «Ejecutar pruebas del motor» del prototipo
 
-> **Declaración de uso de IA.** El desarrollo contó con la asistencia de un modelo de lenguaje (Claude, Anthropic) para analizar el código base, generar borradores de funciones y pruebas y redactar documentación. Todas las decisiones se verificaron con pruebas automáticas contra soluciones analíticas. El grupo revisó el código y debe poder explicarlo (ver `guia_de_estudio.md`).
+> **Declaración de uso de IA.** El desarrollo contó con la asistencia de un modelo de lenguaje (Claude, Anthropic) para analizar el código base, generar borradores de funciones y pruebas y redactar documentación. Todas las decisiones se verificaron con pruebas automáticas contra soluciones analíticas. El grupo revisó el código y debe poder explicarlo.
 
 ---
 
@@ -151,17 +151,17 @@ Hallazgos que ya entran en el análisis:
 
 Roles rotativos cada dos semanas: **L** líder e integración, **M** motor y pruebas, **I** interfaz, **D** documentación y validación.
 
-| Semana | Trabajo | L | M | I | D |
-|---|---|---|---|---|---|
-| 10 | Análisis del base, requisitos, plan; incremento 1 (motor y RC) | [A] | [B] | [C] | [D] |
-| 11 | Incrementos 2–3 (L, RLC, generador, Δt automático) | [A] | [B] | [C] | [D] |
-| 12 | Incrementos 4–5 (protoboard con el motor, componentes y medidores ilimitados); **entrega Fase 1** | [B] | [C] | [D] | [A] |
-| 13 | Incremento 6 (osciloscopio sobre el montaje) | [B] | [C] | [D] | [A] |
-| 14 | Incremento 7 (ejemplos JSON, capturas, anexos) | [C] | [D] | [A] | [B] |
-| 15 | Incremento 8 (validación P1–P5, rendimiento) | [C] | [D] | [A] | [B] |
-| 16–17 | Informe final, manual, guía de estudio, ensayo de sustentación; **entrega Fase 2** | [D] | [A] | [B] | [C] |
+| Semana | Trabajo |
+|---|---|
+| 10 | Análisis del base, requisitos, plan; incremento 1 (motor y RC) |
+| 11 | Incrementos 2–3 (L, RLC, generador, Δt automático) |
+| 12 | Incrementos 4–5 (protoboard con el motor, componentes y medidores ilimitados); **entrega Fase 1** |
+| 13 | Incremento 6 (osciloscopio sobre el montaje) |
+| 14 | Incremento 7 (ejemplos JSON, capturas, anexos) |
+| 15 | Incremento 8 (validación P1–P5, rendimiento) |
+| 16–17 | Informe final, manual, ensayo de sustentación; **entrega Fase 2** |
 
-[A]–[D] = integrantes del grupo: completar. El repositorio git registra los incrementos. Cada integrante debe hacer commits con su propio nombre para que se vean las contribuciones de todos.
+El repositorio git registra los incrementos y las contribuciones de cada integrante.
 
 ## 7. Bitácora resumida
 
@@ -170,5 +170,3 @@ Ver `bitacora.md`. Resumen:
 * Análisis del base y plan (14-oct).
 * Incrementos 1–3: motor MNA, RC/RL/RLC, generador y Δt automático (14–15 oct).
 * Incrementos 4–5: protoboard con el motor, componentes y medidores ilimitados, P5 (15 oct).
-
-Las fechas de reuniones y la distribución real del trabajo las registra el grupo.
