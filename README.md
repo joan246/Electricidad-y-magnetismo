@@ -18,8 +18,10 @@ Ampliación del simulador `simulador_protoboard_dc.html` del curso a un laborato
 | `resultados/pruebas_motor.md` | resultados de las pruebas del motor y de la regresión (lo genera el script) |
 | `resultados/validacion.md` | protocolo P1–P5: tablas de V e I de los 11 montajes, frente a la teoría del montaje y a la ideal |
 | `resultados/osciloscopio/` | capturas SVG, CSV y medidas automáticas de cada ejemplo (anexos) |
+| `resultados/frecuencia/` | capturas SVG y datos CSV de los barridos de frecuencia de P4b, del RLC paralelo y del filtro P4a |
 | `pruebas/ejecutar_pruebas.js` | pruebas del motor, regresión del base y validación, en Node.js |
 | `pruebas/generar_ejemplos.js` | regenera `ejemplos/` y `resultados/osciloscopio/` |
+| `pruebas/generar_barridos.js` | regenera `resultados/frecuencia/` (barridos de frecuencia del informe) |
 | `pruebas/entorno.js` | carga los bloques puros de `simulador.html` en Node, en el mismo orden que el navegador |
 
 ## Uso

@@ -287,6 +287,20 @@ Cubierto el alcance base, se agregaron cuatro funciones. Cada una tiene sus prop
 
 El análisis fasorial y la simulación en el tiempo son dos métodos independientes. En el RLC serie a 1 200 Hz coinciden a 0,004 % en la amplitud y a 0,001° en la fase. En el RLC paralelo, la teoría de la tabla no incluye los cables de 0,02 Ω en serie con L y con C, que bajan Q un 0,4 %.
 
+Las figuras siguientes son capturas del barrido de frecuencia sobre los montajes del protoboard (amplitud arriba y fase abajo, con las frecuencias de corte marcadas). Los datos están en `resultados/frecuencia/`.
+
+![Barrido de frecuencia de P4b: corriente del generador](resultados/frecuencia/P4b_corriente.svg)
+
+*Figura: P4b, corriente que entrega el generador de 500 Hz a 5 kHz. Pico de 14,28 mA en 1 591,6 Hz con la corriente en fase; f1 = 1 129 Hz (+44,99°) y f2 = 2 244 Hz (−45,00°); Q = 1,428.*
+
+![Barrido de frecuencia del RLC paralelo: tensión del tanque](resultados/frecuencia/rlc_paralelo_CH2.svg)
+
+*Figura: RLC paralelo, tensión del tanque (CH2). Pico de 486,5 mV en 1 591,6 Hz; ancho de banda de 311,6 Hz y Q = 5,11.*
+
+![Barrido de frecuencia del filtro P4a](resultados/frecuencia/P4a_filtro_CH2.svg)
+
+*Figura: filtro RC de P4a, salida (CH2). Pasa-bajas con el corte en 152,4 Hz y −45,1°. No da 159 Hz porque los 50 Ω del generador se suman a R: f_c = 1/(2π(R + r_int)C) ≈ 151,6 Hz. El análisis toma como referencia la amplitud a 10 Hz, el extremo del barrido, que ya está 0,2 % por debajo del valor en DC; por eso el corte medido queda un poco más arriba.*
+
 ### 5.8 Circuito de dos mallas con tres puentes y dos resistencias
 
 **Descripción.** Es un circuito DC con una fuente y dos resistencias que forman dos mallas. Se armó para comprobar con medidores las dos leyes de Kirchhoff en un circuito que no se reduce a una sola malla. En el simulador se carga con el botón «Dos mallas · 3 puentes y 2 R» de «Circuitos de ejemplo».
@@ -363,6 +377,55 @@ Las cinco lecturas coinciden con la teoría del montaje a menos de 10⁻⁴ % y 
 
 **Análisis.** El circuito confirma las dos leyes de Kirchhoff con lecturas de instrumentos y no solo con el cálculo del motor. La diferencia de 0,1 % con la teoría ideal no es un error numérico: es la caída en las resistencias pequeñas del montaje, que el simulador incluye igual que un montaje real. Con «Fuentes ideales» y amperímetros de 1 µΩ, la diferencia baja a ≤ 0,011 %, que es lo que pesan los cables de 0,02 Ω.
 
+### 5.9 Efecto de R, C y L en la constante de tiempo
+
+Se simularon el RC y el RL con fuente ideal de 10 V, cambiando un valor a la vez (trapezoidal, Δt = τ/50, 10τ de simulación). τ se midió como en el osciloscopio: el instante en que la curva llega al 63,2 % de su valor final.
+
+**RC** (v_C de 0 a 10 V):
+
+| R | C | τ = RC | τ medido | Diferencia | Corriente inicial V/R | Energía disipada en R | ½CV² |
+|---|---|---|---|---|---|---|---|
+| 500 Ω | 1 µF | 0,5 ms | 0,49994 ms | 0,011 % | 20 mA | 50,005 µJ | 50 µJ |
+| 1 kΩ | 1 µF | 1 ms | 0,99989 ms | 0,011 % | 10 mA | 50,005 µJ | 50 µJ |
+| 2 kΩ | 1 µF | 2 ms | 1,9998 ms | 0,011 % | 5 mA | 50,005 µJ | 50 µJ |
+| 1 kΩ | 0,5 µF | 0,5 ms | 0,49994 ms | 0,011 % | 10 mA | 25,003 µJ | 25 µJ |
+| 1 kΩ | 2 µF | 2 ms | 1,9998 ms | 0,011 % | 10 mA | 100,01 µJ | 100 µJ |
+
+**RL** (corriente de 0 a V/R):
+
+| R | L | τ = L/R | τ medido | Diferencia | Corriente final | V/R | Energía en L (½LI²) |
+|---|---|---|---|---|---|---|---|
+| 50 Ω | 10 mH | 0,2 ms | 0,19998 ms | 0,011 % | 199,99 mA | 200 mA | 199,98 µJ |
+| 100 Ω | 10 mH | 0,1 ms | 0,099989 ms | 0,011 % | 99,995 mA | 100 mA | 49,995 µJ |
+| 200 Ω | 10 mH | 0,05 ms | 0,049994 ms | 0,011 % | 49,998 mA | 50 mA | 12,499 µJ |
+| 100 Ω | 5 mH | 0,05 ms | 0,049994 ms | 0,011 % | 99,995 mA | 100 mA | 24,998 µJ |
+| 100 Ω | 20 mH | 0,2 ms | 0,19998 ms | 0,011 % | 99,995 mA | 100 mA | 99,991 µJ |
+
+La diferencia de 0,011 % es la misma en todos los casos: viene del procedimiento de medición (nivel de 63,2 % sobre el valor al final de la simulación), no del cambio de valores.
+
+* **En el RC**, duplicar R o C duplica τ: la curva de v_C se estira en el tiempo sin cambiar su valor final (V). Al aumentar R, la corriente inicial V/R baja y la curva de i(t) empieza más abajo y decae más lento. La energía que se disipa en R durante la carga es ½CV² **sin importar R**: con R = 500 Ω o 2 kΩ se disipan los mismos 50 µJ, en menos o más tiempo.
+* **En el RL**, duplicar L duplica τ; duplicar R lo reduce a la mitad y también reduce a la mitad la corriente final V/R. La energía que queda en el inductor, ½L(V/R)², cae a la cuarta parte cuando R se duplica.
+
+### 5.10 Error frente al paso de tiempo
+
+Se simuló el RC (1 kΩ, 1 µF, 10 V) con pasos cada vez más pequeños y se midió el error máximo frente a V(1 − e^(−t/τ)), normalizado con V:
+
+| Δt | Error con Euler | Error con trapezoidal |
+|---|---|---|
+| τ/5 | 3,40 % | 0,123 % |
+| τ/10 | 1,77 % | 0,0307 % |
+| τ/20 | 0,901 % | 0,0076 % |
+| τ/50 (el del simulador) | 0,365 % | 0,0012 % |
+| τ/100 | 0,183 % | 2,8·10⁻⁴ % |
+| τ/200 | 0,092 % | 1,0·10⁻⁴ % |
+| τ/1 000 | 0,018 % | 1,0·10⁻⁴ % |
+| τ/5 000 | 0,0037 % | 1,0·10⁻⁴ % |
+| τ/20 000 | 0,00095 % | 1,0·10⁻⁴ % |
+
+* **Euler** reduce el error a la mitad cada vez que Δt se reduce a la mitad (orden medido 0,98–1,00) en todo el intervalo.
+* **El trapezoidal** lo reduce a la cuarta parte (orden 2,00–2,09) hasta Δt ≈ τ/200. **Desde ahí el error deja de mejorar** y se queda en 1,0·10⁻⁴ %: es el piso que fija la fuga GMIN de 1 nS por nodo, que mueve el valor final en R·GMIN = 10⁻⁶ relativo. Sin GMIN, el mismo cálculo sigue bajando hasta 7,7·10⁻⁹ % con τ/20 000.
+* Reducir Δt por debajo de τ/200 solo aumenta el tiempo de cálculo. Con el Δt automático (τ/50), el trapezoidal ya está a 0,0012 % de la teoría, muy por debajo del criterio del 2 %.
+
 ## 6. Análisis y discusión
 
 **Constante de tiempo.** En P1a el motor reproduce τ con un error de 10⁻⁴ en la teoría que incluye la fuente real. El 0,054 % que lo separa de RC corresponde exactamente a la r interna de 0,5 Ω y a los cables (0,54 Ω frente a 1 kΩ), más la sonda de 1 MΩ en paralelo con C. Las variaciones de τ en P1b (+4,9 %) y P2b (−33 %) tienen la misma causa: la resistencia del generador (50 Ω) forma parte del circuito y entra en τ = (R + r)·C y en τ = L/(R + r). En un laboratorio real, la constante de tiempo medida con un generador de 50 Ω **no** es RC. Si se compara con la teoría ideal, la discrepancia se debe a la fuente y no al circuito.
@@ -404,12 +467,52 @@ Las cinco lecturas coinciden con la teoría del montaje a menos de 10⁻⁴ % y 
 4. El método trapezoidal, con estado consistente en t = 0⁺ y reinicio en los flancos, es claramente superior a Euler en circuitos oscilantes y en régimen senoidal. Euler agrega amortiguamiento y retraso de fase artificiales, que el simulador permite observar y cuantificar.
 5. Todo resultado es reproducible con un comando (`node pruebas/ejecutar_pruebas.js`) o con un botón de la app.
 
-**Trabajo futuro:**
+**Cumplimiento de los requisitos de la Fase 1** (definidos en `informe_fase1.md`, sección 2):
 
-* modelo de bobina real (resistencia de alambre) y de capacitor con fuga, con su efecto en Q;
-* extras opcionales: escala en decibelios (diagrama de Bode) en el barrido de frecuencia, modo X-Y para figuras de Lissajous, y medición de potencia y energía en el osciloscopio;
-* ruido opcional en los medidores nuevos;
-* comparación con medidas tomadas en el laboratorio real del curso.
+| ID | Requisito | Estado | Evidencia |
+|---|---|---|---|
+| RF-01 | Conservar las funciones del base | Cumplido | los 4 ejemplos originales coinciden con el archivo del profesor a menos de 10⁻¹¹ |
+| RF-02 | R, C y L ilimitados y ajustables | Cumplido | 301 elementos en la prueba de rendimiento; prefijos, E12 y JSON |
+| RF-03 | Fuentes DC ilimitadas | Cumplido | 3 fuentes del banco y «+ Fuente DC» sin límite; ley de nodos y balance en P5 con residuos de 4·10⁻⁶ y 8·10⁻⁶ (la fuga GMIN) |
+| RF-04 | Fuente variable con deslizador | Cumplido | superposición a 0,0008 %; barrido de tensión |
+| RF-05 | Generador seno, cuadrada y triangular | Cumplido | f(t) igual a la fórmula a menos de 10⁻¹²; media de la cuadrada correcta |
+| RF-06 | Voltímetros y amperímetros ilimitados | Cumplido | 5 medidores a la vez en P5 y en el circuito de dos mallas; efecto de carga = R_th/(R_in + R_th) |
+| RF-07 | Óhmetro conservado | Cumplido | valores dorados del original |
+| RF-08 | Osciloscopio de 2 o más canales | Cumplido | canales sin límite; τ, período y fase con errores ≤ 0,1 % |
+| RF-09 | Transitorios y régimen senoidal | Cumplido | protocolo P1–P4: 99/99 magnitudes |
+| RF-10 | Registro, CSV y JSON extendidos | Cumplido | CSV del osciloscopio y de los barridos; guardar y cargar idénticos en los 11 ejemplos |
+| RF-11 | Ejemplos RC, RL, RLC, filtros y los 4 originales | Cumplido | 11 montajes en `ejemplos/*.json`, más RLC paralelo, dos mallas y potenciómetro |
+| RF-12 | Bode, X-Y, potencia y energía (opcional) | Parcial | barrido de frecuencia con amplitud y fase (sin escala en dB), energía en los bancos y balance de potencia; sin modo X-Y |
+| RNF-01 | Un solo HTML, sin bibliotecas | Cumplido | sin `<script src>`; funciona sin internet |
+| RNF-02 | Motor puro, probado en Node | Cumplido | `node pruebas/ejecutar_pruebas.js` termina con código 0 |
+| RNF-03 | Exactitud | Cumplido | errores ≤ 0,1 % frente a la teoría del montaje |
+| RNF-04 | Paso controlado y verificado | Cumplido | Δt automático; verificación con Δt/2 en cada simulación (sección 5.10) |
+| RNF-05 | Casos límite con mensaje | Cumplido | sistema singular, nodo flotante, fuente en corto, valor inválido y terminal en el aire tienen mensaje |
+| RNF-06 | Fluidez | Cumplido | 301 elementos × 20 000 pasos en menos de 5 s (límite 10 s); simulación por lotes sin congelar la página |
+
+**Decisiones de diseño que cambiaron durante el proyecto:**
+
+* **Teoría del montaje en lugar de la teoría ideal** como referencia del criterio. Frente a la ideal, las diferencias llegaban al 71 % sin que hubiera un error numérico: eran la resistencia del generador y de los instrumentos. Comparar con la teoría que las incluye separa el error del simulador de la física del montaje.
+* **Reinicio del estado en los flancos de la onda cuadrada.** Sin él, el trapezoidal perdía un orden de precisión (0,68 % de error); con él, el error bajó a 0,0004 %.
+* **Simulación por lotes con `setTimeout`.** La primera versión usaba `requestAnimationFrame`, que el navegador suspende cuando la pestaña no se ve, y la simulación se detenía.
+* **El generador dentro del protoboard** (fuente ideal más r_int como dos elementos del motor), en lugar de dejarlo solo en los bancos de transitorios: así el osciloscopio mide montajes reales.
+* **Integración por ramas y pull requests.** Subir el archivo completo por la página de GitHub borró un incremento entero; se recuperó con una fusión de tres vías y desde entonces cada cambio entra por una rama.
+* **Régimen senoidal como un sistema real del doble de tamaño**, para reutilizar la misma factorización LU del motor en lugar de escribir aritmética compleja en el solver.
+
+**Trabajo futuro y cómo se validaría:**
+
+Con una semana más, la función prioritaria sería el **modo AC (RMS) en los voltímetros y amperímetros**, porque es lo que un estudiante encuentra en un multímetro real. Se validaría con señales de valor eficaz conocido: una senoidal de amplitud A debe leer A/√2, una cuadrada simétrica A y una triangular A/√3, y las lecturas deben coincidir con el Vrms del osciloscopio en el mismo punto.
+
+Otras funciones, cada una con su prueba:
+
+| Función | Prueba de validación |
+|---|---|
+| Bobina con resistencia de alambre R_L | τ = L/(R + R_L) en el RL y Q = √(L/C)/(R + R_L) en el barrido del RLC serie |
+| Capacitor con fuga R_f | descarga libre con τ = R_f·C |
+| Escala en dB en el barrido (Bode) | −3,01 dB en f_c y pendiente de −20 dB por década por encima de f_c en el RC |
+| Modo X-Y en el osciloscopio | en el filtro RC en f_c, la elipse debe dar sen φ = 0,707 (45°), igual que el desfase medido por retardo |
+| Ruido en los medidores | el promedio de N lecturas tiende al valor del motor y su dispersión baja como 1/√N |
+| Comparación con el laboratorio real | medir P1a y P4b en el laboratorio y comparar con la teoría del montaje usando la r interna real de la fuente y del generador |
 
 ## Referencias
 
@@ -443,7 +546,7 @@ Las cinco lecturas coinciden con la teoría del montaje a menos de 10⁻⁴ % y 
 
 **A. Tablas de datos.** `resultados/validacion.md`: las 99 magnitudes de los 11 montajes, con simulado, teoría del montaje, error, criterio, teoría ideal y error frente al ideal. `resultados/pruebas_motor.md`: las 308 pruebas del motor frente a la teoría y las 143 de regresión y de los incrementos 11 y 12. `resultados/osciloscopio/<id>.csv`: datos en el tiempo de cada pantalla.
 
-**B. Capturas del osciloscopio.** `resultados/osciloscopio/<id>.svg` (P1a … P4c) y `resultados/osciloscopio/README.md`, con las medidas automáticas de cada captura.
+**B. Capturas del osciloscopio y del barrido de frecuencia.** `resultados/osciloscopio/<id>.svg` (P1a … P4c) y `resultados/osciloscopio/README.md`, con las medidas automáticas de cada captura. `resultados/frecuencia/*.svg` y `*.csv`: barridos de P4b, del RLC paralelo y del filtro P4a.
 
 **C. Cambios en el código del base.** Funciones modificadas: `buildNet`, `solveDC`, `solveOhm`, `occ`, `drawSources`, `drawTray`, `drawRes`, `drawOver`, `drawFlow`, `renderReadings`, `renderAnalysis`, `pairFor`, `placeRes`, `down`, `move`, `buildSwatches`, `buildSrcPanel`, `buildRPanel`, `updateRLabels` y `bind`. Ninguna eliminada. Lista generada en `resultados/pruebas_motor.md`, sección C.
 
