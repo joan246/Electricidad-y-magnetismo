@@ -269,7 +269,7 @@ Cubierto el alcance base, se agregaron cuatro funciones. Cada una tiene sus prop
 
 * **Barrido de tensión** (19 pruebas). Recorre la tensión de una fuente y ajusta cada lectura a una recta. La pendiente de la corriente de la fuente es 1/R equivalente (ley de Ohm), la de una tensión es la ganancia de un divisor y la ordenada es el aporte de las otras fuentes (superposición).
 * **Potenciómetro y máxima transferencia de potencia** (21 pruebas). Con 10 V, R1 = 1 kΩ y un reóstato de 10 kΩ, la recta v_L–i_L da R_th = 1 000,459 Ω frente a 1 000,460 Ω de la teoría del montaje. La potencia máxima medida es 24,9832 mW frente a V_th²/(4R_th) = 24,9835 mW (0,001 %), con R_L = R_th.
-* **Dos mallas, tres puentes y dos resistencias** (10 pruebas). Con 12 V, R1 = 1 kΩ y R2 = 2,2 kΩ, el análisis de mallas da I1 = 17,4545 mA, I2 = 5,4545 mA e I1 − I2 = 12 mA. El simulador lee 17,4387 mA, 5,4502 mA y 11,9885 mA (0,08 a 0,10 % menos, por la r interna, los cables y los shunts). El residuo de la ley de nodos con las lecturas es 4·10⁻⁵ %.
+* **Dos mallas, tres puentes y dos resistencias** (10 pruebas): cálculo completo y resultados en la sección 5.8.
 * **Barrido de frecuencia** (47 pruebas). Resuelve el montaje en régimen senoidal permanente con las mismas ecuaciones del motor en forma fasorial (R → 1/R, C → jωC, L → jωL) y obtiene de la curva el pico, las frecuencias de corte a −3 dB, el ancho de banda y Q.
 
 | Circuito | Magnitud | Barrido | Teoría | Diferencia |
@@ -286,6 +286,82 @@ Cubierto el alcance base, se agregaron cuatro funciones. Cada una tiene sus prop
 | | i_L / i del generador en f0 | 9,93 | 9,97 | 0,39 % |
 
 El análisis fasorial y la simulación en el tiempo son dos métodos independientes. En el RLC serie a 1 200 Hz coinciden a 0,004 % en la amplitud y a 0,001° en la fase. En el RLC paralelo, la teoría de la tabla no incluye los cables de 0,02 Ω en serie con L y con C, que bajan Q un 0,4 %.
+
+### 5.8 Circuito de dos mallas con tres puentes y dos resistencias
+
+**Descripción.** Es un circuito DC con una fuente y dos resistencias que forman dos mallas. Se armó para comprobar con medidores las dos leyes de Kirchhoff en un circuito que no se reduce a una sola malla. En el simulador se carga con el botón «Dos mallas · 3 puentes y 2 R» de «Circuitos de ejemplo».
+
+* **Fuente 1:** V = 12 V.
+* **R1 = 1 kΩ** en la rama central y **R2 = 2,2 kΩ** en la rama derecha. Son las resistencias R1 y R2 del simulador base, en su valor nominal.
+* **Tres cables puente:**
+  * puente 1: del riel positivo, donde llega el borne + de la fuente, hasta AM1, que lo une al nodo superior A;
+  * puente 2: del nodo A a la rama de R2;
+  * puente 3: de R2 de vuelta al nodo inferior B, donde vuelve el borne − de la fuente.
+* **Cinco medidores:**
+  * AM1, a la salida de la fuente: corriente total I1;
+  * AM3, en la rama de R1: corriente de R1;
+  * AM2, en la rama de R2: corriente de R2;
+  * VM1 sobre R1 y VM2 sobre R2.
+
+Las dos ramas comparten los nodos A y B, así que R1 y R2 quedan en paralelo con la fuente. La malla 1 está formada por la fuente y R1, y la malla 2 por R1 y R2.
+
+```
+        puente 1        A      puente 2
+   +───[AM1]───────────●──────────[AM2]───┐
+   │                   │                  │
+ (12 V)   malla 1    [AM3]     malla 2    │
+   │        I1 ↻     [R1]       I2 ↻     [R2]
+   │                   │                  │
+   −───────────────────●──────────────────┘
+                        B      puente 3
+```
+
+**Cálculo teórico (análisis de mallas).** Se asigna una corriente a cada malla, las dos en sentido horario: I1 en la malla 1 e I2 en la malla 2. Por R1 pasan las dos en sentidos opuestos, así que su corriente es I1 − I2. Por la ley de tensiones de Kirchhoff, la suma de tensiones en cada malla es cero:
+
+* Malla 1: V − R1·(I1 − I2) = 0, es decir 12 − 1 000·(I1 − I2) = 0
+* Malla 2: −R1·(I2 − I1) − R2·I2 = 0, es decir −1 000·(I2 − I1) − 2 200·I2 = 0
+
+Al sumar las dos ecuaciones se cancelan los términos de R1 y queda V − R2·I2 = 0. Entonces:
+
+* I2 = V/R2 = 12/2 200 = **5,4545 mA** (corriente de R2)
+* I1 − I2 = V/R1 = 12/1 000 = **12,0000 mA** (corriente de R1)
+* I1 = V/R1 + V/R2 = **17,4545 mA** (corriente de la fuente)
+
+**Ley de corrientes de Kirchhoff en el nodo A.** La corriente que entra es igual a la que sale por las dos ramas: I1 = I_R1 + I_R2, es decir 17,4545 = 12,0000 + 5,4545 mA.
+
+**Resistencia equivalente.** R_eq = R1·R2/(R1 + R2) = 2 200 000/3 200 = **687,5 Ω**. Con ella, I1 = V/R_eq = 17,4545 mA, la misma corriente que da el análisis de mallas.
+
+**Potencia.** La fuente entrega P = V·I1 = V²/R_eq = **209,45 mW**. R1 disipa R1·(I1 − I2)² = 144,00 mW y R2 disipa R2·I2² = 65,45 mW. La suma es 209,45 mW: toda la energía que entrega la fuente se disipa en las resistencias.
+
+**Teoría del montaje.** Como en las pruebas P1–P5, la comparación con el simulador se hace con la teoría que incluye las resistencias del montaje:
+
+* en serie con la fuente: r interna 0,5 Ω, tres cables de 0,02 Ω y el shunt de AM1 (0,1 Ω), en total r_s = 0,66 Ω;
+* rama de R1: shunt de AM3 (0,1 Ω) más R1 en paralelo con VM1 (10 MΩ), en total R_A = 1 000,000 Ω;
+* rama de R2: dos puentes (0,04 Ω), shunt de AM2 (0,1 Ω) y R2 en paralelo con VM2, en total R_B = 2 199,656 Ω.
+
+Entonces R_eq = r_s + R_A‖R_B = 688,126 Ω, I1 = V/R_eq = 17,4387 mA, y esa corriente se reparte entre las ramas en proporción inversa a R_A y R_B.
+
+**Resultados.**
+
+| Medidor | Simulado | Teoría del montaje | Error | Teoría ideal | Error vs. ideal |
+|---|---|---|---|---|---|
+| AM1 (I1, fuente) | 17,4387 mA | 17,4387 mA | 7·10⁻⁵ % | 17,4545 mA | 0,091 % |
+| AM2 (I2, R2) | 5,45017 mA | 5,45017 mA | 6·10⁻⁵ % | 5,45455 mA | 0,080 % |
+| AM3 (I1 − I2, R1) | 11,9885 mA | 11,9885 mA | 3·10⁻⁵ % | 12,0000 mA | 0,096 % |
+| VM1 (v_R1) | 11,9873 V | 11,9873 V | 10⁻⁷ % | 12 V | 0,106 % |
+| VM2 (v_R2) | 11,9877 V | 11,9877 V | 10⁻⁷ % | 12 V | 0,102 % |
+| R equivalente (V/AM1) | 688,126 Ω | 688,126 Ω | 7·10⁻⁵ % | 687,5 Ω | 0,091 % |
+
+Las cinco lecturas coinciden con la teoría del montaje a menos de 10⁻⁴ % y cumplen el criterio de 1 % también frente a la teoría ideal.
+
+**Leyes de Kirchhoff con las lecturas de los medidores:**
+
+* **Nodos:** |AM1 − AM2 − AM3|/AM1 = 4·10⁻⁵ %. El residuo es la fuga de 1 nS por nodo (GMIN).
+* **Malla 2:** VM1 y VM2 difieren en 0,44 mV (0,004 % de V). Es la caída en el shunt de AM3 (0,1 Ω × 12 mA = 1,2 mV) menos la de los puentes y AM2 en la otra rama (0,14 Ω × 5,45 mA = 0,76 mV).
+* **Malla 1:** VM1 es 12,7 mV menor que V (0,106 %). Esa tensión cae en la resistencia interna de la fuente, los cables y los amperímetros.
+* **Balance de potencia:** V·AM1 = 209,26 mW frente a R1·AM3² + R2·AM2² = 209,07 mW. La diferencia, 0,2 mW (0,09 %), es la potencia que se disipa en la resistencia interna de la fuente, los cables y los amperímetros, que esa suma no incluye.
+
+**Análisis.** El circuito confirma las dos leyes de Kirchhoff con lecturas de instrumentos y no solo con el cálculo del motor. La diferencia de 0,1 % con la teoría ideal no es un error numérico: es la caída en las resistencias pequeñas del montaje, que el simulador incluye igual que un montaje real. Con «Fuentes ideales» y amperímetros de 1 µΩ, la diferencia baja a ≤ 0,011 %, que es lo que pesan los cables de 0,02 Ω.
 
 ## 6. Análisis y discusión
 
