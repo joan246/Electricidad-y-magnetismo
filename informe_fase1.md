@@ -1,6 +1,7 @@
 # Laboratorio virtual de circuitos R, C y L — Informe de la Fase 1
 
 **Electricidad y Magnetismo · 2026-2 · Pontificia Universidad Javeriana Cali**
+**Integrantes:** Joan Camilo Hinestroza · Miguel Eduardo Hinestroza · Jerónimo Hurtado · **Profesor:** Gustavo Murillo Yepes
 **Entrega:** semana 12
 **Prototipo:** `simulador_v1.html` (incrementos 1–5) · **Pruebas:** botón «Ejecutar pruebas del motor» del prototipo
 

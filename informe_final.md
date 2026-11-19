@@ -5,6 +5,9 @@
 Electricidad y Magnetismo · Periodo 2026-2
 Pontificia Universidad Javeriana Cali · Facultad de Ingeniería y Ciencias
 
+**Integrantes:** Joan Camilo Hinestroza · Miguel Eduardo Hinestroza · Jerónimo Hurtado
+**Profesor:** Gustavo Murillo Yepes
+
 Entregables: `simulador.html` (simulador final), `ejemplos/*.json`, `resultados/`, `manual_usuario.md`, `bitacora.md`, `README.md`
 
 ---

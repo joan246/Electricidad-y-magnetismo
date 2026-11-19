@@ -1,6 +1,7 @@
 # Plan de validación del laboratorio virtual R, C, L
 
 Electricidad y Magnetismo · 2026-2 · Pontificia Universidad Javeriana Cali
+Integrantes: Joan Camilo Hinestroza · Miguel Eduardo Hinestroza · Jerónimo Hurtado · Profesor: Gustavo Murillo Yepes
 
 Este plan define qué circuitos se arman, con qué valores, qué magnitudes se miden, cómo se miden y con qué criterio se acepta el resultado. Cada prueba tiene un montaje guardado en `ejemplos/<id>.json` y se ejecuta de tres formas que dan el mismo resultado:
 

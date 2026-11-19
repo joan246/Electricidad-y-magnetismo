@@ -2,6 +2,9 @@
 
 Ampliación del simulador `simulador_protoboard_dc.html` del curso a un laboratorio virtual con resistencias, capacitores, inductores, fuentes DC y variable, generador de señales, voltímetros y amperímetros ilimitados y osciloscopio de varios canales. Es un solo archivo HTML, sin librerías externas ni conexión a internet.
 
+**Integrantes:** Joan Camilo Hinestroza · Miguel Eduardo Hinestroza · Jerónimo Hurtado
+**Profesor:** Gustavo Murillo Yepes
+
 ## Archivos
 
 | Ruta | Contenido |
