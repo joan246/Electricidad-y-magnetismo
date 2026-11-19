@@ -3,9 +3,11 @@
 **Informe final — Fase 2**
 
 Electricidad y Magnetismo · Periodo 2026-2
+
 Pontificia Universidad Javeriana Cali · Facultad de Ingeniería y Ciencias
 
 **Integrantes:** Joan Camilo Hinestroza · Miguel Eduardo Hinestroza · Jerónimo Hurtado
+
 **Profesor:** Gustavo Murillo Yepes
 
 Entregables: `simulador.html` (simulador final), `ejemplos/*.json`, `resultados/`, `manual_usuario.md`, `bitacora.md`, `README.md`
@@ -90,19 +92,12 @@ El simulador final es `simulador.html`. Es un solo archivo, sin bibliotecas ni C
 | `modelo-montaje` (a) | modelo de datos: componentes ilimitados, netlist del protoboard, E12, validación, diagnóstico, JSON y catálogo de ejemplos | no |
 | `osciloscopio-logica` (d) | plan de simulación del montaje, disparo, medidas automáticas, pantalla SVG, CSV | no |
 | `pruebas-motor` y `validacion-protocolo` | soluciones analíticas, mediciones, pruebas y protocolo P1–P5 | no |
-| `montaje-ui`, `<script>` del base, `ui-componentes`, `ui-osciloscopio`, `ui-validacion`, `ui-temporal` | dibujo del protoboard (c), paneles, osciloscopio, bancos (e) | sí |
+| `barrido-logica` y `frecuencia-logica` | barridos de tensión, del cursor y de frecuencia: valores, ajustes, análisis y gráficas | no |
+| `montaje-ui`, `<script>` del base, `ui-componentes`, `ui-osciloscopio`, `ui-validacion`, `ui-barrido`, `ui-frecuencia`, `ui-temporal` | dibujo del protoboard (c), paneles, osciloscopio, barridos, bancos (e) | sí |
 
-```mermaid
-flowchart LR
-  UI[Protoboard y paneles] -->|editar| MOD[(st.res: R, C, L, VM, AM, GEN, CH)]
-  MOD -->|buildNet + netlist| MOT[MotorMNA]
-  MOT -->|DC: v, i| INS[Instrumentos y medidores]
-  MOT -->|transitorio por lotes| OSC[Osciloscopio]
-  OSC --> DAT[PNG / SVG / CSV / registro]
-  MOD <-->|JSON v2| PER[Guardar / cargar / ejemplos]
-  VAL[Validación P1–P5] --> MOT
-  NODE[Node.js: pruebas y anexos] --> VAL
-```
+![Arquitectura del simulador](resultados/figuras/arquitectura.svg)
+
+*Figura: flujo de datos entre los bloques del simulador.*
 
 **Modelo de datos.** Todos los componentes viven en el mapa dinámico `st.res` (nombre heredado del base), con identificador, tipo, valor y terminales. Una entrada sin tipo es una resistencia, de modo que los ejemplos y los JSON del base siguen funcionando. Cada componente se traduce en uno o dos elementos del motor (`ModeloMontaje.elementoMotor`):
 

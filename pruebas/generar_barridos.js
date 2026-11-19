@@ -29,7 +29,10 @@ BARRIDOS.forEach(b => {
   const res = BF.ejecutar(circ, 'GEN1', [b.magnitud], b.p);
   if (!res.ok) { console.error(`${b.archivo}: ${res.error}`); process.exitCode = 1; return; }
   const an = BF.analizar(res, b.magnitud.clave);
-  fs.writeFileSync(path.join(carpeta, b.archivo + '.svg'), BF.graficaSVG(res, b.magnitud.clave, an));
+  // En la app la gráfica ocupa el ancho del panel (width="100%"); en el archivo se fija su tamaño
+  // en píxeles (el del viewBox) para que Word y otros programas la muestren con sus proporciones
+  const svg = BF.graficaSVG(res, b.magnitud.clave, an).replace(/viewBox="0 0 (\d+) (\d+)" width="100%"/, 'viewBox="0 0 $1 $2" width="$1" height="$2"');
+  fs.writeFileSync(path.join(carpeta, b.archivo + '.svg'), svg);
   fs.writeFileSync(path.join(carpeta, b.archivo + '.csv'), BF.csv(res));
   console.log(`${b.archivo}: ${an.texto}; pico ${MM.formatoValor(an.pico.amp, b.magnitud.unidad, 5)} en ${MM.formatoValor(an.pico.f, 'Hz', 5)}` +
     (an.Q ? `; Q = ${an.Q.toPrecision(4)}` : '') + (an.tipo === 'bajas' ? `; f_c = ${MM.formatoValor(an.alto, 'Hz', 5)}` : ''));
